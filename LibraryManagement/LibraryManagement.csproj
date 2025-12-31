@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <StartupObject>LibraryManagement.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Dapper" Version="2.1.24" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Forms\FormLogin.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Forms\FormMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Forms\FormBookManagement.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Forms\FormMemberManagement.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Forms\FormBorrow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Forms\FormReturn.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Forms\FormReport.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="Forms\FormSettings.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="App.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
