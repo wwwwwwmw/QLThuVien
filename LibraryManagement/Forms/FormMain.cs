@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 using LibraryManagement.Data;
@@ -27,25 +28,28 @@ namespace LibraryManagement.Forms
         private Label lblTodayReturn = null!;
         private DataGridView dgvRecentBorrows = null!;
         private DataGridView dgvOverdueList = null!;
+        private Label lblRecentLabel = null!;
+        private Label lblOverdueLabel = null!;
+        private bool isLoggingOut = false;
 
         public FormMain()
         {
             InitializeComponent();
-            SetupForm();
-            LoadDashboard();
+            this.Load += FormMain_Load;
         }
 
-        private void InitializeComponent()
+
+
+        private void FormMain_Load(object? sender, EventArgs e)
         {
-            this.SuspendLayout();
-            this.AutoScaleDimensions = new SizeF(7F, 15F);
-            this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new Size(1280, 720);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.Text = "Quản lý Thư viện - Hệ thống đa máy LAN";
-            this.WindowState = FormWindowState.Maximized;
-            this.FormClosing += FormMain_FormClosing;
-            this.ResumeLayout(false);
+            SetupForm();
+
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+            {
+                return;
+            }
+
+            LoadDashboard();
         }
 
         private void SetupForm()
@@ -126,6 +130,8 @@ namespace LibraryManagement.Forms
             this.Controls.Add(panelContent);
             this.Controls.Add(panelMenu);
             this.Controls.Add(panelHeader);
+
+            panelContent.Resize += PanelContent_Resize;
 
             // Timer for datetime
             timerDateTime = new System.Windows.Forms.Timer { Interval = 1000 };
@@ -259,50 +265,51 @@ namespace LibraryManagement.Forms
             // DataGridViews
             y = 140;
 
-            // Recent borrows
-            var lblRecent = new Label
+            int margin = 20;
+            int splitSpacing = 20;
+            int yTop = 140;
+            int halfWidth = (panelContent.ClientSize.Width - margin * 2 - splitSpacing) / 2;
+            int leftX = margin;
+            int rightX = margin + halfWidth + splitSpacing;
+            int gridTop = yTop + 30;
+            int gridHeight = Math.Max(200, panelContent.ClientSize.Height - gridTop - 70);
+
+            lblRecentLabel = new Label
             {
                 Text = "Mượn sách gần đây",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                Location = new Point(20, y),
+                Location = new Point(leftX, yTop),
                 AutoSize = true
             };
-            panelContent.Controls.Add(lblRecent);
-            y += 30;
+            panelContent.Controls.Add(lblRecentLabel);
 
-            dgvRecentBorrows = CreateDataGridView(20, y, 580, 250);
+            dgvRecentBorrows = CreateDataGridView(leftX, gridTop, halfWidth, gridHeight);
+            dgvRecentBorrows.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Bottom;
+            dgvRecentBorrows.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvRecentBorrows.Columns.Add("BorrowCode", "Mã phiếu");
             dgvRecentBorrows.Columns.Add("MemberName", "Độc giả");
             dgvRecentBorrows.Columns.Add("BookTitle", "Tên sách");
             dgvRecentBorrows.Columns.Add("BorrowDate", "Ngày mượn");
             dgvRecentBorrows.Columns.Add("DueDate", "Hạn trả");
-            dgvRecentBorrows.Columns["BorrowCode"]!.Width = 90;
-            dgvRecentBorrows.Columns["MemberName"]!.Width = 110;
-            dgvRecentBorrows.Columns["BookTitle"]!.Width = 170;
-            dgvRecentBorrows.Columns["BorrowDate"]!.Width = 95;
-            dgvRecentBorrows.Columns["DueDate"]!.Width = 85;
             panelContent.Controls.Add(dgvRecentBorrows);
 
-            // Overdue list
-            var lblOverdueList = new Label
+            lblOverdueLabel = new Label
             {
                 Text = "Sách quá hạn",
                 Font = new Font("Segoe UI", 12, FontStyle.Bold),
                 ForeColor = Color.FromArgb(192, 57, 43),
-                Location = new Point(620, 140),
+                Location = new Point(rightX, yTop),
                 AutoSize = true
             };
-            panelContent.Controls.Add(lblOverdueList);
+            panelContent.Controls.Add(lblOverdueLabel);
 
-            dgvOverdueList = CreateDataGridView(620, 170, 580, 250);
+            dgvOverdueList = CreateDataGridView(rightX, gridTop, halfWidth, gridHeight);
+            dgvOverdueList.Anchor = AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom;
+            dgvOverdueList.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvOverdueList.Columns.Add("MemberName", "Độc giả");
             dgvOverdueList.Columns.Add("BookTitle", "Tên sách");
             dgvOverdueList.Columns.Add("DueDate", "Hạn trả");
             dgvOverdueList.Columns.Add("DaysOverdue", "Quá hạn");
-            dgvOverdueList.Columns["MemberName"]!.Width = 150;
-            dgvOverdueList.Columns["BookTitle"]!.Width = 220;
-            dgvOverdueList.Columns["DueDate"]!.Width = 100;
-            dgvOverdueList.Columns["DaysOverdue"]!.Width = 100;
             panelContent.Controls.Add(dgvOverdueList);
 
             // Refresh button
@@ -314,12 +321,13 @@ namespace LibraryManagement.Forms
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
                 Size = new Size(120, 35),
-                Location = new Point(20, 430),
+                Location = new Point(margin, panelContent.ClientSize.Height - 45),
                 Cursor = Cursors.Hand
             };
             btnRefresh.FlatAppearance.BorderSize = 0;
             btnRefresh.Click += (s, e) => LoadDashboard();
             panelContent.Controls.Add(btnRefresh);
+            AdjustGridLayout();
         }
 
         private Panel CreateStatCard(string title, string value, Color color, int x, int y, int width, int height)
@@ -451,6 +459,34 @@ namespace LibraryManagement.Forms
             form.Show();
         }
 
+        private void PanelContent_Resize(object? sender, EventArgs e)
+        {
+            AdjustGridLayout();
+        }
+
+        private void AdjustGridLayout()
+        {
+            if (panelContent == null || dgvRecentBorrows == null || dgvOverdueList == null) return;
+
+            int margin = 20;
+            int splitSpacing = 20;
+            int yTop = 140;
+            int gridTop = yTop + 30;
+            int halfWidth = Math.Max(200, (panelContent.ClientSize.Width - margin * 2 - splitSpacing) / 2);
+            int leftX = margin;
+            int rightX = margin + halfWidth + splitSpacing;
+            int gridHeight = Math.Max(200, panelContent.ClientSize.Height - gridTop - 70);
+
+            dgvRecentBorrows.Location = new Point(leftX, gridTop);
+            dgvRecentBorrows.Size = new Size(halfWidth, gridHeight);
+
+            dgvOverdueList.Location = new Point(rightX, gridTop);
+            dgvOverdueList.Size = new Size(halfWidth, gridHeight);
+
+            if (lblRecentLabel != null) lblRecentLabel.Location = new Point(leftX, yTop);
+            if (lblOverdueLabel != null) lblOverdueLabel.Location = new Point(rightX, yTop);
+        }
+
         private void BtnLogout_Click(object? sender, EventArgs e)
         {
             var result = MessageBox.Show("Bạn có chắc muốn đăng xuất?", "Xác nhận",
@@ -460,32 +496,19 @@ namespace LibraryManagement.Forms
             {
                 var logDAO = new ActivityLogDAO();
                 logDAO.Log("Đăng xuất hệ thống");
-
+                isLoggingOut = true;
                 CurrentUser.Logout();
-                this.Hide();
-
-                using (var loginForm = new FormLogin())
-                {
-                    if (loginForm.ShowDialog() == DialogResult.OK)
-                    {
-                        // Re-setup with new user
-                        SetupMenu();
-                        ClearContent();
-                        SetupDashboard();
-                        LoadDashboard();
-                        lblCurrentUser.Text = $"👤 {CurrentUser.User?.FullName} ({CurrentUser.User?.Role})";
-                        this.Show();
-                    }
-                    else
-                    {
-                        Application.Exit();
-                    }
-                }
+                this.Close();
             }
         }
 
         private void FormMain_FormClosing(object? sender, FormClosingEventArgs e)
         {
+            if (isLoggingOut)
+            {
+                timerDateTime?.Stop();
+                return;
+            }
             if (e.CloseReason == CloseReason.UserClosing)
             {
                 var result = MessageBox.Show("Bạn có chắc muốn thoát ứng dụng?", "Xác nhận",
@@ -502,6 +525,11 @@ namespace LibraryManagement.Forms
                     logDAO.Log("Thoát ứng dụng");
                 }
             }
+        }
+
+        private void FormMain_Load_1(object sender, EventArgs e)
+        {
+
         }
     }
 }

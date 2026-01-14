@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 using LibraryManagement.Data;
@@ -26,23 +27,24 @@ namespace LibraryManagement.Forms
 
         private UserDAO userDAO = new UserDAO();
         private User? selectedUser;
-        private bool isEditing = false;
 
         public FormUserManagement()
         {
             InitializeComponent();
             SetupForm();
+            this.Load += FormUserManagement_Load;
+        }
+
+        private void FormUserManagement_Load(object? sender, EventArgs e)
+        {
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+            {
+                return;
+            }
+
             LoadData();
         }
 
-        private void InitializeComponent()
-        {
-            this.SuspendLayout();
-            this.AutoScaleDimensions = new SizeF(7F, 15F);
-            this.AutoScaleMode = AutoScaleMode.Font;
-            this.BackColor = Color.FromArgb(236, 240, 241);
-            this.ResumeLayout(false);
-        }
 
         private void SetupForm()
         {
@@ -383,7 +385,6 @@ namespace LibraryManagement.Forms
         private void AddNew()
         {
             selectedUser = null;
-            isEditing = true;
             ClearForm();
             SetFormEnabled(true);
             txtUsername.Enabled = true;
@@ -394,7 +395,6 @@ namespace LibraryManagement.Forms
         {
             if (selectedUser == null) return;
 
-            isEditing = true;
             SetFormEnabled(true);
             txtUsername.Enabled = false;
             txtFullName.Focus();
@@ -402,7 +402,6 @@ namespace LibraryManagement.Forms
 
         private void CancelEdit()
         {
-            isEditing = false;
             if (selectedUser != null)
             {
                 DisplayUser(selectedUser);

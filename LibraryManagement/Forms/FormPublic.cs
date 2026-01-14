@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Data;
+using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Windows.Forms;
 using LibraryManagement.Data;
@@ -18,6 +21,11 @@ namespace LibraryManagement.Forms
         private Panel panelSearch = null!;
         private Panel panelBooks = null!;
         private FlowLayoutPanel flowBooks = null!;
+        private Panel panelHighlights = null!;
+        private Label lblNewBooks = null!;
+        private FlowLayoutPanel flowNewBooks = null!;
+        private Label lblCategories = null!;
+        private FlowLayoutPanel flowCategories = null!;
         private TextBox txtSearch = null!;
         private ComboBox cboCategory = null!;
         private Label lblTotalBooks = null!;
@@ -27,21 +35,22 @@ namespace LibraryManagement.Forms
         public FormPublic()
         {
             InitializeComponent();
-            SetupForm();
-            LoadCategories();
-            LoadBooks();
+            this.Load += FormPublic_Load;
         }
 
-        private void InitializeComponent()
+        
+
+        private void FormPublic_Load(object? sender, EventArgs e)
         {
-            this.SuspendLayout();
-            this.AutoScaleDimensions = new SizeF(7F, 15F);
-            this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new Size(1280, 720);
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.Text = "📚 Thư Viện Sách - Tra cứu công khai";
-            this.WindowState = FormWindowState.Maximized;
-            this.ResumeLayout(false);
+            SetupForm();
+
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+            {
+                return;
+            }
+
+            LoadCategories();
+            LoadBooks();
         }
 
         private void SetupForm()
@@ -66,17 +75,7 @@ namespace LibraryManagement.Forms
             };
 
             // Nút Đăng ký
-            Button btnRegister = new Button
-            {
-                Text = "Đăng ký thẻ",
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                BackColor = Color.FromArgb(155, 89, 182),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(100, 35),
-                Cursor = Cursors.Hand
-            };
-            btnRegister.FlatAppearance.BorderSize = 0;
+            Button btnRegister = CreateStyledButton("Đăng ký thẻ", Color.FromArgb(155, 89, 182), new Size(120, 38));
             btnRegister.Click += (s, e) =>
             {
                 MessageBox.Show("Để đăng ký thẻ thư viện, vui lòng:\n\n" +
@@ -89,17 +88,7 @@ namespace LibraryManagement.Forms
             };
 
             // Nút Đăng nhập (cho nhân viên/admin)
-            Button btnLogin = new Button
-            {
-                Text = "Đăng nhập (NV)",
-                Font = new Font("Segoe UI", 9, FontStyle.Bold),
-                BackColor = Color.FromArgb(46, 204, 113),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(110, 35),
-                Cursor = Cursors.Hand
-            };
-            btnLogin.FlatAppearance.BorderSize = 0;
+            Button btnLogin = CreateStyledButton("Đăng nhập (NV)", Color.FromArgb(46, 204, 113), new Size(140, 38));
             btnLogin.Click += BtnLogin_Click;
 
             panelHeader.Controls.AddRange(new Control[] { lblTitle, btnRegister, btnLogin });
@@ -187,18 +176,8 @@ namespace LibraryManagement.Forms
                 Margin = new Padding(15, 8, 15, 0)
             };
 
-            Button btnRefresh = new Button
-            {
-                Text = "Làm mới",
-                Font = new Font("Segoe UI", 10),
-                BackColor = Color.FromArgb(52, 152, 219),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(90, 35),
-                Cursor = Cursors.Hand,
-                Margin = new Padding(5, 3, 10, 3)
-            };
-            btnRefresh.FlatAppearance.BorderSize = 0;
+            Button btnRefresh = CreateStyledButton("Làm mới", Color.FromArgb(52, 152, 219), new Size(110, 36));
+            btnRefresh.Margin = new Padding(5, 3, 10, 3);
             btnRefresh.Click += (s, e) => LoadBooks();
 
             searchLayout.Controls.Add(lblSearch, 0, 0);
@@ -209,6 +188,52 @@ namespace LibraryManagement.Forms
             searchLayout.Controls.Add(btnRefresh, 5, 0);
 
             panelSearch.Controls.Add(searchLayout);
+
+            // Highlights Panel on top
+            panelHighlights = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 330,
+                BackColor = Color.FromArgb(248, 249, 250)
+            };
+
+            lblNewBooks = new Label
+            {
+                Text = "TOP SÁCH MỚI",
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                ForeColor = Color.FromArgb(44, 62, 80),
+                Location = new Point(20, 10),
+                AutoSize = true
+            };
+            panelHighlights.Controls.Add(lblNewBooks);
+
+            flowNewBooks = new FlowLayoutPanel
+            {
+                Location = new Point(20, 45),
+                Size = new Size(900, 170),
+                AutoScroll = false,
+                WrapContents = false
+            };
+            panelHighlights.Controls.Add(flowNewBooks);
+
+            lblCategories = new Label
+            {
+                Text = "THỂ LOẠI SÁCH",
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
+                ForeColor = Color.FromArgb(44, 62, 80),
+                Location = new Point(20, 225),
+                AutoSize = true
+            };
+            panelHighlights.Controls.Add(lblCategories);
+
+            flowCategories = new FlowLayoutPanel
+            {
+                Location = new Point(20, 260),
+                Size = new Size(900, 60),
+                AutoScroll = true,
+                WrapContents = true
+            };
+            panelHighlights.Controls.Add(flowCategories);
 
             // Books Panel with FlowLayout
             panelBooks = new Panel
@@ -230,8 +255,10 @@ namespace LibraryManagement.Forms
 
             // Add panels in correct order
             this.Controls.Add(panelBooks);
+            this.Controls.Add(panelHighlights);
             this.Controls.Add(panelSearch);
             this.Controls.Add(panelHeader);
+            this.Resize += (s, e) => AdjustHighlightsLayout();
         }
 
         private void LoadCategories()
@@ -275,6 +302,7 @@ namespace LibraryManagement.Forms
             {
                 allBooks = bookDAO.GetAll();
                 DisplayBooks(allBooks);
+                LoadHighlights();
             }
             catch (Exception ex)
             {
@@ -295,6 +323,99 @@ namespace LibraryManagement.Forms
             }
         }
 
+        private void LoadHighlights()
+        {
+            flowNewBooks.Controls.Clear();
+            var latest3 = allBooks.OrderByDescending(b => b.CreatedDate).Take(3).ToList();
+            foreach (var b in latest3)
+            {
+                flowNewBooks.Controls.Add(CreateSmallBookCard(b));
+            }
+
+            flowCategories.Controls.Clear();
+            try
+            {
+                using (var conn = DatabaseConnection.GetConnection())
+                {
+                    conn.Open();
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "SELECT CategoryID, CategoryName FROM Categories WHERE IsActive = 1 ORDER BY CategoryName";
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var cat = new Category { CategoryID = reader.GetInt32(0), CategoryName = reader.GetString(1) };
+                                flowCategories.Controls.Add(CreateCategoryChip(cat));
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            AdjustHighlightsLayout();
+        }
+
+        private Control CreateSmallBookCard(Book book)
+        {
+            Panel card = new Panel { Size = new Size(260, 160), BackColor = Color.White, Margin = new Padding(10), Cursor = Cursors.Hand };
+            ApplyRoundedCorners(card, 10);
+            card.Paint += (s, e) => ControlPaint.DrawBorder(e.Graphics, card.ClientRectangle, Color.FromArgb(230, 230, 230), ButtonBorderStyle.Solid);
+
+            PictureBox pic = new PictureBox { Size = new Size(110, 140), Location = new Point(15, 10), SizeMode = PictureBoxSizeMode.Zoom, BackColor = Color.White, BorderStyle = BorderStyle.FixedSingle };
+            if (!string.IsNullOrEmpty(book.ImagePath))
+            {
+                string path = Path.Combine(Application.StartupPath, "Images", book.ImagePath);
+                if (File.Exists(path)) { try { pic.Image = Image.FromFile(path); } catch { } }
+            }
+            if (pic.Image == null)
+            {
+                Label ico = new Label { Text = "📖", Font = new Font("Segoe UI", 36), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleCenter };
+                pic.Controls.Add(ico);
+            }
+            card.Controls.Add(pic);
+
+            Label title = new Label { Text = book.Title, Font = new Font("Segoe UI", 10, FontStyle.Bold), Location = new Point(130, 12), Size = new Size(120, 40) };
+            card.Controls.Add(title);
+            Label info = new Label { Text = (book.AuthorName ?? "") + (book.CategoryName != null ? $" • {book.CategoryName}" : ""), Font = new Font("Segoe UI", 9), ForeColor = Color.Gray, Location = new Point(130, 55), Size = new Size(120, 20) };
+            card.Controls.Add(info);
+            Label status = new Label { Text = book.AvailableCopies > 0 ? $"Còn {book.AvailableCopies} cuốn" : "Hết sách", Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = book.AvailableCopies > 0 ? Color.FromArgb(46, 204, 113) : Color.FromArgb(231, 76, 60), Location = new Point(130, 78), AutoSize = true };
+            card.Controls.Add(status);
+
+            card.Click += (s, e) => ShowBookDetail(book);
+            foreach (Control c in card.Controls) c.Click += (s, e) => ShowBookDetail(book);
+            card.MouseEnter += (s, e) => card.BackColor = Color.FromArgb(240, 248, 255);
+            card.MouseLeave += (s, e) => card.BackColor = Color.White;
+            return card;
+        }
+
+        private Control CreateCategoryChip(Category category)
+        {
+            var btn = new Button { Text = category.CategoryName, AutoSize = true, Padding = new Padding(12, 6, 12, 6), BackColor = Color.FromArgb(52, 152, 219), ForeColor = Color.White, FlatStyle = FlatStyle.Flat, Margin = new Padding(6) };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.Cursor = Cursors.Hand;
+            btn.Click += (s, e) =>
+            {
+                for (int i = 0; i < cboCategory.Items.Count; i++)
+                {
+                    if ((cboCategory.Items[i] is ComboBoxItem ci) && ci.Value == category.CategoryID)
+                    {
+                        cboCategory.SelectedIndex = i;
+                        break;
+                    }
+                }
+            };
+            return btn;
+        }
+
+        private void AdjustHighlightsLayout()
+        {
+            if (panelHighlights == null) return;
+            int width = panelBooks?.ClientSize.Width > 0 ? panelBooks.ClientSize.Width : this.ClientSize.Width;
+            flowNewBooks.Size = new Size(width - 60, flowNewBooks.Height);
+            flowCategories.Size = new Size(width - 60, flowCategories.Height);
+        }
+
         private Panel CreateBookCard(Book book)
         {
             Panel card = new Panel
@@ -305,6 +426,7 @@ namespace LibraryManagement.Forms
                 Cursor = Cursors.Hand,
                 Tag = book
             };
+            ApplyRoundedCorners(card, 10);
 
             // Border
             card.Paint += (s, e) =>
@@ -457,24 +579,22 @@ namespace LibraryManagement.Forms
             {
                 if (loginForm.ShowDialog() == DialogResult.OK)
                 {
-                    // Login successful - open main form
+                    var mainForm = new FormMain();
+                    mainForm.FormClosed += (s2, e2) =>
+                    {
+                        if (CurrentUser.User == null)
+                        {
+                            this.Show();
+                            LoadBooks();
+                        }
+                        else
+                        {
+                            CurrentUser.Logout();
+                            this.Show();
+                        }
+                    };
                     this.Hide();
-                    using (var mainForm = new FormMain())
-                    {
-                        mainForm.ShowDialog();
-                    }
-                    // After main form closed, show public form again or close
-                    if (CurrentUser.User == null)
-                    {
-                        this.Show();
-                        LoadBooks(); // Refresh
-                    }
-                    else
-                    {
-                        // Still logged in, maybe user closed window
-                        CurrentUser.Logout();
-                        this.Show();
-                    }
+                    mainForm.Show();
                 }
             }
         }
@@ -491,7 +611,7 @@ namespace LibraryManagement.Forms
     /// <summary>
     /// Form xem chi tiết sách (công khai)
     /// </summary>
-    public class FormBookDetailPublic : Form
+    public partial class FormBookDetailPublic : Form
     {
         private Book book;
 
@@ -502,16 +622,7 @@ namespace LibraryManagement.Forms
             LoadBookInfo();
         }
 
-        private void InitializeComponent()
-        {
-            this.Text = $"Chi tiết sách: {book.Title}";
-            this.Size = new Size(700, 500);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.BackColor = Color.White;
-        }
+        
 
         private void LoadBookInfo()
         {
@@ -669,29 +780,21 @@ namespace LibraryManagement.Forms
             {
                 Text = "Đăng nhập để mượn sách",
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                BackColor = Color.FromArgb(46, 204, 113),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(200, 38),
+                Size = new Size(220, 40),
                 Location = new Point(15, 10),
-                Cursor = Cursors.Hand,
                 Enabled = book.AvailableCopies > 0
             };
-            btnBorrow.FlatAppearance.BorderSize = 0;
+            StyleButton(btnBorrow, Color.FromArgb(46, 204, 113), 20);
             btnBorrow.Click += (s, e) => { this.DialogResult = DialogResult.Yes; this.Close(); };
 
             Button btnClose = new Button
             {
                 Text = "Đóng",
-                Font = new Font("Segoe UI", 10),
-                BackColor = Color.FromArgb(52, 152, 219),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(80, 38),
-                Location = new Point(230, 10),
-                Cursor = Cursors.Hand
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Size = new Size(100, 40),
+                Location = new Point(245, 10)
             };
-            btnClose.FlatAppearance.BorderSize = 0;
+            StyleButton(btnClose, Color.FromArgb(52, 152, 219), 20);
             btnClose.Click += (s, e) => this.Close();
 
             panelBottom.Controls.AddRange(new Control[] { btnBorrow, btnClose });
@@ -713,7 +816,7 @@ namespace LibraryManagement.Forms
             Label lblValue = new Label
             {
                 Text = value,
-                Font = new Font("Segoe UI", 10),
+                Font = new Font("Segoe UI", 10, FontStyle.Regular),
                 ForeColor = Color.FromArgb(44, 62, 80),
                 Location = new Point(100, y),
                 MaximumSize = new Size(350, 30),
@@ -722,6 +825,104 @@ namespace LibraryManagement.Forms
             parent.Controls.Add(lblValue);
 
             y += 25;
+        }
+
+        private void StyleButton(Button btn, Color backColor, int radius)
+        {
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.BackColor = backColor;
+            btn.ForeColor = Color.White;
+            btn.Cursor = Cursors.Hand;
+            btn.Padding = new Padding(12, 0, 12, 0);
+            btn.FlatAppearance.MouseOverBackColor = Lighten(backColor, 20);
+            btn.FlatAppearance.MouseDownBackColor = Darken(backColor, 15);
+            btn.Resize += (s, e) => ApplyRoundedCorners(btn, radius);
+        }
+
+        private void ApplyRoundedCorners(Control c, int radius)
+        {
+            if (c.Width == 0 || c.Height == 0) return;
+            using (var path = new GraphicsPath())
+            {
+                int r = radius;
+                path.AddArc(0, 0, r, r, 180, 90);
+                path.AddArc(c.Width - r, 0, r, r, 270, 90);
+                path.AddArc(c.Width - r, c.Height - r, r, r, 0, 90);
+                path.AddArc(0, c.Height - r, r, r, 90, 90);
+                path.CloseAllFigures();
+                c.Region = new Region(path);
+            }
+        }
+
+        private Color Lighten(Color color, int amount)
+        {
+            int r = Math.Min(255, color.R + amount);
+            int g = Math.Min(255, color.G + amount);
+            int b = Math.Min(255, color.B + amount);
+            return Color.FromArgb(r, g, b);
+        }
+
+        private Color Darken(Color color, int amount)
+        {
+            int r = Math.Max(0, color.R - amount);
+            int g = Math.Max(0, color.G - amount);
+            int b = Math.Max(0, color.B - amount);
+            return Color.FromArgb(r, g, b);
+        }
+    }
+
+    partial class FormPublic
+    {
+        private Button CreateStyledButton(string text, Color backColor, Size size)
+        {
+            var btn = new Button
+            {
+                Text = text,
+                Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                BackColor = backColor,
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Size = size,
+                Cursor = Cursors.Hand,
+                Padding = new Padding(12, 0, 12, 0)
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.FlatAppearance.MouseOverBackColor = Lighten(backColor, 20);
+            btn.FlatAppearance.MouseDownBackColor = Darken(backColor, 15);
+            btn.Resize += (s, e) => ApplyRoundedCorners(btn, 18);
+            return btn;
+        }
+
+        private void ApplyRoundedCorners(Control c, int radius)
+        {
+            if (c.Width == 0 || c.Height == 0) return;
+            using (var path = new GraphicsPath())
+            {
+                int r = radius;
+                path.AddArc(0, 0, r, r, 180, 90);
+                path.AddArc(c.Width - r, 0, r, r, 270, 90);
+                path.AddArc(c.Width - r, c.Height - r, r, r, 0, 90);
+                path.AddArc(0, c.Height - r, r, r, 90, 90);
+                path.CloseAllFigures();
+                c.Region = new Region(path);
+            }
+        }
+
+        private Color Lighten(Color color, int amount)
+        {
+            int r = Math.Min(255, color.R + amount);
+            int g = Math.Min(255, color.G + amount);
+            int b = Math.Min(255, color.B + amount);
+            return Color.FromArgb(r, g, b);
+        }
+
+        private Color Darken(Color color, int amount)
+        {
+            int r = Math.Max(0, color.R - amount);
+            int g = Math.Max(0, color.G - amount);
+            int b = Math.Max(0, color.B - amount);
+            return Color.FromArgb(r, g, b);
         }
     }
 }

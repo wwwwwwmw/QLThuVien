@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 using LibraryManagement.Data;
@@ -8,7 +9,7 @@ namespace LibraryManagement.Forms
     /// <summary>
     /// Form xem chi tiết phiếu mượn/trả
     /// </summary>
-    public class FormBorrowReturnDetails : Form
+    public partial class FormBorrowReturnDetails : Form
     {
         private TabControl tabControl = null!;
         private DataGridView dgvBorrow = null!;
@@ -20,7 +21,18 @@ namespace LibraryManagement.Forms
 
         public FormBorrowReturnDetails()
         {
+            InitializeComponent();
             SetupForm();
+            this.Load += FormBorrowReturnDetails_Load;
+        }
+
+        private void FormBorrowReturnDetails_Load(object? sender, EventArgs e)
+        {
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+            {
+                return;
+            }
+
             LoadData();
         }
 

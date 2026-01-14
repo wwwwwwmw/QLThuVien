@@ -1723,24 +1723,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ASUS\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\TRUONG TAM\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\ASUS\\Documents\\QLThuVien\\LibraryManagement\\LibraryManagement.csproj",
+      "projectUniqueName": "D:\\A.monhoc\\congngheNET\\QLThuVien\\LibraryManagement\\LibraryManagement.csproj",
       "projectName": "LibraryManagement",
-      "projectPath": "C:\\Users\\ASUS\\Documents\\QLThuVien\\LibraryManagement\\LibraryManagement.csproj",
-      "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\ASUS\\Documents\\QLThuVien\\LibraryManagement\\obj\\",
+      "projectPath": "D:\\A.monhoc\\congngheNET\\QLThuVien\\LibraryManagement\\LibraryManagement.csproj",
+      "packagesPath": "C:\\Users\\TRUONG TAM\\.nuget\\packages\\",
+      "outputPath": "D:\\A.monhoc\\congngheNET\\QLThuVien\\LibraryManagement\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+        "C:\\Users\\TRUONG TAM\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -1765,8 +1760,7 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      },
-      "SdkAnalysisLevel": "9.0.300"
+      }
     },
     "frameworks": {
       "net8.0-windows7.0": {
@@ -1804,7 +1798,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
