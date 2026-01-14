@@ -31,18 +31,23 @@ namespace LibraryManagement.Forms
         public FormUserManagement()
         {
             InitializeComponent();
-            SetupForm();
             this.Load += FormUserManagement_Load;
         }
 
         private void FormUserManagement_Load(object? sender, EventArgs e)
         {
+            SetupForm();
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-            {
                 return;
-            }
 
-            LoadData();
+            try
+            {
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message);
+            }
         }
 
 

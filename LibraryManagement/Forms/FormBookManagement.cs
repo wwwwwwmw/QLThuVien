@@ -51,19 +51,24 @@ namespace LibraryManagement.Forms
         public FormBookManagement()
         {
             InitializeComponent();
-            SetupForm();
             this.Load += FormBookManagement_Load;
         }
 
         private void FormBookManagement_Load(object? sender, EventArgs e)
         {
+            SetupForm();
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-            {
                 return;
-            }
 
-            EnsureImagesFolderExists();
-            LoadData();
+            try
+            {
+                EnsureImagesFolderExists();
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message);
+            }
         }
 
         private void EnsureImagesFolderExists()

@@ -33,6 +33,7 @@ namespace LibraryManagement.Forms
         public FormBorrow()
         {
             InitializeComponent();
+            this.Load += FormBorrow_Load;
         }
 
         private void SetupForm()
@@ -429,7 +430,7 @@ namespace LibraryManagement.Forms
             }
         }
 
-        private void FormBorrow_Load(object sender, EventArgs e)
+        private void FormBorrow_Load(object? sender, EventArgs e)
         {
             SetupForm();
 

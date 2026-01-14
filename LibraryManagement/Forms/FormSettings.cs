@@ -26,19 +26,24 @@ namespace LibraryManagement.Forms
         public FormSettings()
         {
             InitializeComponent();
-            SetupForm();
             this.Load += FormSettings_Load;
         }
 
         private void FormSettings_Load(object? sender, EventArgs e)
         {
+            SetupForm();
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-            {
                 return;
-            }
 
-            LoadSettings();
-            LoadLogs();
+            try
+            {
+                LoadSettings();
+                LoadLogs();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message);
+            }
         }
 
 

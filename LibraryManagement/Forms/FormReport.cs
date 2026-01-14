@@ -22,18 +22,23 @@ namespace LibraryManagement.Forms
         public FormReport()
         {
             InitializeComponent();
-            SetupForm();
             this.Load += FormReport_Load;
         }
 
         private void FormReport_Load(object? sender, EventArgs e)
         {
+            SetupForm();
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-            {
                 return;
-            }
 
-            LoadDashboardStats();
+            try
+            {
+                LoadDashboardStats();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message);
+            }
         }
 
 

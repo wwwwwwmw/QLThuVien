@@ -24,8 +24,10 @@ namespace LibraryManagement.Forms
         public FormLogin()
         {
             InitializeComponent();
-            SetupForm();
+            this.Load += FormLogin_Load;
         }
+
+
 
         
 
@@ -171,10 +173,10 @@ namespace LibraryManagement.Forms
 
         private void FormLogin_Load(object? sender, EventArgs e)
         {
+            SetupForm();
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-            {
                 return;
-            }
+
             // Test database connection
             if (!DatabaseConnection.TestConnection(out string error))
             {

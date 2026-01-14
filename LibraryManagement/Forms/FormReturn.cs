@@ -24,18 +24,23 @@ namespace LibraryManagement.Forms
         public FormReturn()
         {
             InitializeComponent();
-            SetupForm();
             this.Load += FormReturn_Load;
         }
 
         private void FormReturn_Load(object? sender, EventArgs e)
         {
+            SetupForm();
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-            {
                 return;
-            }
 
-            LoadData();
+            try
+            {
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message);
+            }
         }
 
 
