@@ -12,11 +12,11 @@
       }
     ],
     "additionalProbingPaths": [
-      "C:\\Users\\TRUONG TAM\\.dotnet\\store\\|arch|\\|tfm|",
-      "C:\\Users\\TRUONG TAM\\.nuget\\packages"
+      "C:\\Users\\LECOO\\.dotnet\\store\\|arch|\\|tfm|",
+      "C:\\Users\\LECOO\\.nuget\\packages"
     ],
     "configProperties": {
-      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": true,
+      "CSWINRT_USE_WINDOWS_UI_XAML_PROJECTIONS": false,
       "Microsoft.NETCore.DotNetHostPolicy.SetAppPaths": true
     }
   }

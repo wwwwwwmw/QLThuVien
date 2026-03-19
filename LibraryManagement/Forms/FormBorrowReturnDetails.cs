@@ -11,14 +11,6 @@ namespace LibraryManagement.Forms
     /// </summary>
     public partial class FormBorrowReturnDetails : Form
     {
-        private TabControl tabControl = null!;
-        private DataGridView dgvBorrow = null!;
-        private DataGridView dgvReturn = null!;
-        private DateTimePicker dtpFrom = null!;
-        private DateTimePicker dtpTo = null!;
-        private Label lblBorrowSummary = null!;
-        private Label lblReturnSummary = null!;
-
         public FormBorrowReturnDetails()
         {
             InitializeComponent();
@@ -27,217 +19,19 @@ namespace LibraryManagement.Forms
 
         private void FormBorrowReturnDetails_Load(object? sender, EventArgs e)
         {
-            SetupForm();
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
                 return;
 
             try
             {
+                dtpFrom.Value = DateTime.Today.AddMonths(-1);
+                dtpTo.Value = DateTime.Today;
                 LoadData();
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Lỗi tải dữ liệu: " + ex.Message);
             }
-        }
-
-        private void SetupForm()
-        {
-            this.Text = "Chi tiết phiếu mượn / trả sách";
-            this.Size = new Size(1000, 650);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = Color.FromArgb(236, 240, 241);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-
-            // Header
-            var lblTitle = new Label
-            {
-                Text = "CHI TIẾT PHIẾU MƯỢN / TRẢ SÁCH",
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(20, 15),
-                AutoSize = true
-            };
-            this.Controls.Add(lblTitle);
-
-            // Filter panel
-            var panelFilter = new Panel
-            {
-                Location = new Point(20, 55),
-                Size = new Size(945, 50),
-                BackColor = Color.White
-            };
-
-            var lblFrom = new Label { Text = "Từ ngày:", Location = new Point(15, 15), AutoSize = true };
-            dtpFrom = new DateTimePicker
-            {
-                Location = new Point(80, 12),
-                Size = new Size(130, 28),
-                Format = DateTimePickerFormat.Short,
-                Value = DateTime.Today.AddMonths(-1)
-            };
-
-            var lblTo = new Label { Text = "Đến:", Location = new Point(225, 15), AutoSize = true };
-            dtpTo = new DateTimePicker
-            {
-                Location = new Point(265, 12),
-                Size = new Size(130, 28),
-                Format = DateTimePickerFormat.Short,
-                Value = DateTime.Today
-            };
-
-            var btnFilter = new Button
-            {
-                Text = "Lọc dữ liệu",
-                Location = new Point(410, 10),
-                Size = new Size(100, 32),
-                BackColor = Color.FromArgb(52, 152, 219),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnFilter.FlatAppearance.BorderSize = 0;
-            btnFilter.Click += (s, e) => LoadData();
-
-            var btnExport = new Button
-            {
-                Text = "Xuất Excel",
-                Location = new Point(520, 10),
-                Size = new Size(90, 32),
-                BackColor = Color.FromArgb(46, 204, 113),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnExport.FlatAppearance.BorderSize = 0;
-            btnExport.Click += (s, e) => ExportToExcel();
-
-            panelFilter.Controls.AddRange(new Control[] { lblFrom, dtpFrom, lblTo, dtpTo, btnFilter, btnExport });
-            this.Controls.Add(panelFilter);
-
-            // Tab Control
-            tabControl = new TabControl
-            {
-                Location = new Point(20, 115),
-                Size = new Size(945, 440),
-                Font = new Font("Segoe UI", 10)
-            };
-
-            // Tab Phiếu mượn
-            var tabBorrow = new TabPage
-            {
-                Text = "Phiếu mượn",
-                BackColor = Color.White,
-                Padding = new Padding(10)
-            };
-
-            dgvBorrow = CreateDataGridView();
-            dgvBorrow.Columns.Add("BorrowCode", "Mã phiếu");
-            dgvBorrow.Columns.Add("MemberName", "Độc giả");
-            dgvBorrow.Columns.Add("BookTitle", "Tên sách");
-            dgvBorrow.Columns.Add("BorrowDate", "Ngày mượn");
-            dgvBorrow.Columns.Add("DueDate", "Hạn trả");
-            dgvBorrow.Columns.Add("Status", "Trạng thái");
-            dgvBorrow.Columns.Add("StaffName", "Nhân viên");
-
-            dgvBorrow.Columns["BorrowCode"]!.Width = 120;
-            dgvBorrow.Columns["MemberName"]!.Width = 150;
-            dgvBorrow.Columns["BookTitle"]!.Width = 220;
-            dgvBorrow.Columns["BorrowDate"]!.Width = 90;
-            dgvBorrow.Columns["DueDate"]!.Width = 90;
-            dgvBorrow.Columns["Status"]!.Width = 90;
-            dgvBorrow.Columns["StaffName"]!.Width = 120;
-
-            tabBorrow.Controls.Add(dgvBorrow);
-
-            lblBorrowSummary = new Label
-            {
-                Location = new Point(10, 370),
-                Size = new Size(900, 25),
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = Color.FromArgb(41, 128, 185)
-            };
-            tabBorrow.Controls.Add(lblBorrowSummary);
-
-            // Tab Phiếu trả
-            var tabReturn = new TabPage
-            {
-                Text = "Phiếu trả",
-                BackColor = Color.White,
-                Padding = new Padding(10)
-            };
-
-            dgvReturn = CreateDataGridView();
-            dgvReturn.Columns.Add("BorrowCode", "Mã phiếu");
-            dgvReturn.Columns.Add("MemberName", "Độc giả");
-            dgvReturn.Columns.Add("BookTitle", "Tên sách");
-            dgvReturn.Columns.Add("BorrowDate", "Ngày mượn");
-            dgvReturn.Columns.Add("ReturnDate", "Ngày trả");
-            dgvReturn.Columns.Add("FineAmount", "Tiền phạt");
-            dgvReturn.Columns.Add("StaffName", "Nhân viên");
-
-            dgvReturn.Columns["BorrowCode"]!.Width = 120;
-            dgvReturn.Columns["MemberName"]!.Width = 150;
-            dgvReturn.Columns["BookTitle"]!.Width = 220;
-            dgvReturn.Columns["BorrowDate"]!.Width = 90;
-            dgvReturn.Columns["ReturnDate"]!.Width = 90;
-            dgvReturn.Columns["FineAmount"]!.Width = 90;
-            dgvReturn.Columns["StaffName"]!.Width = 120;
-
-            tabReturn.Controls.Add(dgvReturn);
-
-            lblReturnSummary = new Label
-            {
-                Location = new Point(10, 370),
-                Size = new Size(900, 25),
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = Color.FromArgb(39, 174, 96)
-            };
-            tabReturn.Controls.Add(lblReturnSummary);
-
-            tabControl.TabPages.Add(tabBorrow);
-            tabControl.TabPages.Add(tabReturn);
-            this.Controls.Add(tabControl);
-
-            // Close button
-            var btnClose = new Button
-            {
-                Text = "Đóng",
-                Location = new Point(865, 565),
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(149, 165, 166),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnClose.FlatAppearance.BorderSize = 0;
-            btnClose.Click += (s, e) => this.Close();
-            this.Controls.Add(btnClose);
-        }
-
-        private DataGridView CreateDataGridView()
-        {
-            var dgv = new DataGridView
-            {
-                Location = new Point(10, 10),
-                Size = new Size(905, 355),
-                BackgroundColor = Color.White,
-                BorderStyle = BorderStyle.FixedSingle,
-                RowHeadersVisible = false,
-                AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false,
-                ReadOnly = true,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
-            };
-            dgv.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
-            {
-                BackColor = Color.FromArgb(52, 73, 94),
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 9, FontStyle.Bold)
-            };
-            return dgv;
         }
 
         private void LoadData()
@@ -432,6 +226,21 @@ namespace LibraryManagement.Forms
                     }
                 }
             }
+        }
+
+        private void BtnFilter_Click(object? sender, EventArgs e)
+        {
+            LoadData();
+        }
+
+        private void BtnExport_Click(object? sender, EventArgs e)
+        {
+            ExportToExcel();
+        }
+
+        private void BtnClose_Click(object? sender, EventArgs e)
+        {
+            Close();
         }
     }
 }

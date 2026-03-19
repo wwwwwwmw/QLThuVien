@@ -1723,19 +1723,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\TRUONG TAM\\.nuget\\packages\\": {}
+    "C:\\Users\\LECOO\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\A.monhoc\\congngheNET\\QLThuVien\\LibraryManagement\\LibraryManagement.csproj",
+      "projectUniqueName": "D:\\Documents\\QLThuVien\\LibraryManagement\\LibraryManagement.csproj",
       "projectName": "LibraryManagement",
-      "projectPath": "D:\\A.monhoc\\congngheNET\\QLThuVien\\LibraryManagement\\LibraryManagement.csproj",
-      "packagesPath": "C:\\Users\\TRUONG TAM\\.nuget\\packages\\",
-      "outputPath": "D:\\A.monhoc\\congngheNET\\QLThuVien\\LibraryManagement\\obj\\",
+      "projectPath": "D:\\Documents\\QLThuVien\\LibraryManagement\\LibraryManagement.csproj",
+      "packagesPath": "C:\\Users\\LECOO\\.nuget\\packages\\",
+      "outputPath": "D:\\Documents\\QLThuVien\\LibraryManagement\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\TRUONG TAM\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\LECOO\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -1760,7 +1760,8 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
       "net8.0-windows7.0": {
@@ -1790,6 +1791,24 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[8.0.23, 8.0.23]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.win-x64",
+            "version": "[8.0.23, 8.0.23]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Ref",
+            "version": "[8.0.23, 8.0.23]"
+          },
+          {
+            "name": "Microsoft.WindowsDesktop.App.Ref",
+            "version": "[8.0.23, 8.0.23]"
+          }
+        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
@@ -1798,7 +1817,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.204/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.102/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

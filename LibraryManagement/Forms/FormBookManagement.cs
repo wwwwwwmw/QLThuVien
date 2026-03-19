@@ -1,3 +1,5 @@
+using LibraryManagement.Data;
+using LibraryManagement.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -6,8 +8,6 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using LibraryManagement.Data;
-using LibraryManagement.Models;
 
 namespace LibraryManagement.Forms
 {
@@ -16,28 +16,6 @@ namespace LibraryManagement.Forms
     /// </summary>
     public partial class FormBookManagement : Form
     {
-        private DataGridView dgvBooks = null!;
-        private TextBox txtSearch = null!;
-        private ComboBox cboCategory = null!;
-        private ComboBox cboAuthor = null!;
-        private CheckBox chkAvailableOnly = null!;
-
-        // Detail fields
-        private TextBox txtISBN = null!;
-        private TextBox txtTitle = null!;
-        private ComboBox cboCategoryDetail = null!;
-        private ComboBox cboAuthorDetail = null!;
-        private ComboBox cboPublisher = null!;
-        private NumericUpDown numYear = null!;
-        private NumericUpDown numPrice = null!;
-        private NumericUpDown numTotalCopies = null!;
-        private TextBox txtLocation = null!;
-        private TextBox txtDescription = null!;
-
-        // Image controls
-        private PictureBox picBookImage = null!;
-        private Button btnBrowseImage = null!;
-        private Button btnRemoveImage = null!;
         private string? currentImagePath = null;
         private string imagesFolder = Path.Combine(Application.StartupPath, "Images");
 
@@ -51,18 +29,18 @@ namespace LibraryManagement.Forms
         public FormBookManagement()
         {
             InitializeComponent();
-            this.Load += FormBookManagement_Load;
+            Load += FormBookManagement_Load;
         }
 
         private void FormBookManagement_Load(object? sender, EventArgs e)
         {
-            SetupForm();
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
                 return;
 
             try
             {
                 EnsureImagesFolderExists();
+                ConfigureBookGrid();
                 LoadData();
             }
             catch (Exception ex)
@@ -79,84 +57,11 @@ namespace LibraryManagement.Forms
             }
         }
 
-        
-
-        private void SetupForm()
+        private void ConfigureBookGrid()
         {
-            // Title
-            var lblTitle = new Label
-            {
-                Text = "📚 QUẢN LÝ SÁCH",
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(20, 10),
-                AutoSize = true
-            };
-            this.Controls.Add(lblTitle);
+            dgvBooks.Columns.Clear();
 
-            // Search panel
-            var panelSearch = new Panel
-            {
-                Location = new Point(20, 50),
-                Size = new Size(800, 50),
-                BackColor = Color.White
-            };
-
-            txtSearch = new TextBox
-            {
-                Location = new Point(10, 12),
-                Size = new Size(200, 28),
-                Font = new Font("Segoe UI", 10),
-                PlaceholderText = "Tìm kiếm sách..."
-            };
-            txtSearch.TextChanged += (s, e) => SearchBooks();
-
-            var lblCategory = new Label { Text = "Thể loại:", Location = new Point(220, 15), AutoSize = true };
-            cboCategory = new ComboBox
-            {
-                Location = new Point(280, 12),
-                Size = new Size(150, 28),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cboCategory.SelectedIndexChanged += (s, e) => SearchBooks();
-
-            var lblAuthor = new Label { Text = "Tác giả:", Location = new Point(440, 15), AutoSize = true };
-            cboAuthor = new ComboBox
-            {
-                Location = new Point(500, 12),
-                Size = new Size(150, 28),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cboAuthor.SelectedIndexChanged += (s, e) => SearchBooks();
-
-            chkAvailableOnly = new CheckBox
-            {
-                Text = "Chỉ còn sách",
-                Location = new Point(670, 14),
-                AutoSize = true
-            };
-            chkAvailableOnly.CheckedChanged += (s, e) => SearchBooks();
-
-            panelSearch.Controls.AddRange(new Control[] { txtSearch, lblCategory, cboCategory, lblAuthor, cboAuthor, chkAvailableOnly });
-            this.Controls.Add(panelSearch);
-
-            // DataGridView
-            dgvBooks = new DataGridView
-            {
-                Location = new Point(20, 110),
-                Size = new Size(800, 350),
-                BackgroundColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                RowHeadersVisible = false,
-                AllowUserToAddRows = false,
-                AllowUserToDeleteRows = false,
-                ReadOnly = true,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
-            };
-            dgvBooks.SelectionChanged += DgvBooks_SelectionChanged;
-            dgvBooks.CellDoubleClick += (s, e) => EditBook();
-
+            dgvBooks.EnableHeadersVisualStyles = false;
             dgvBooks.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
             {
                 BackColor = Color.FromArgb(52, 73, 94),
@@ -173,274 +78,20 @@ namespace LibraryManagement.Forms
             dgvBooks.Columns.Add("AvailableCopies", "Còn");
             dgvBooks.Columns.Add("Location", "Vị trí");
 
-            dgvBooks.Columns["BookID"]!.Visible = false;
-            dgvBooks.Columns["ISBN"]!.Width = 100;
-            dgvBooks.Columns["Title"]!.Width = 250;
-            dgvBooks.Columns["CategoryName"]!.Width = 100;
-            dgvBooks.Columns["AuthorName"]!.Width = 120;
-            dgvBooks.Columns["TotalCopies"]!.Width = 60;
-            dgvBooks.Columns["AvailableCopies"]!.Width = 60;
-            dgvBooks.Columns["Location"]!.Width = 80;
-
-            this.Controls.Add(dgvBooks);
-
-            // Buttons
-            int btnY = 470;
-
-            var btnAdd = CreateButton("Thêm mới", 20, btnY, Color.FromArgb(46, 204, 113));
-            btnAdd.Click += (s, e) => AddBook();
-            this.Controls.Add(btnAdd);
-
-            var btnEdit = CreateButton("Sửa", 130, btnY, Color.FromArgb(52, 152, 219));
-            btnEdit.Click += (s, e) => EditBook();
-            this.Controls.Add(btnEdit);
-
-            var btnDelete = CreateButton("Xóa", 220, btnY, Color.FromArgb(231, 76, 60));
-            btnDelete.Click += (s, e) => DeleteBook();
-            this.Controls.Add(btnDelete);
-
-            var btnRefresh = CreateButton("Làm mới", 310, btnY, Color.FromArgb(149, 165, 166));
-            btnRefresh.Click += (s, e) => LoadData();
-            this.Controls.Add(btnRefresh);
-
-            // Detail panel - with scroll support
-            var panelDetail = new Panel
-            {
-                Location = new Point(840, 50),
-                Size = new Size(380, 530),
-                BackColor = Color.White,
-                AutoScroll = true
-            };
-
-            var lblDetailTitle = new Label
-            {
-                Text = "Thông tin sách",
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
-                Location = new Point(15, 10),
-                AutoSize = true
-            };
-            panelDetail.Controls.Add(lblDetailTitle);
-
-            // Book Image Panel - smaller
-            var panelImage = new Panel
-            {
-                Location = new Point(15, 40),
-                Size = new Size(120, 150),
-                BackColor = Color.FromArgb(245, 245, 245),
-                BorderStyle = BorderStyle.FixedSingle
-            };
-
-            picBookImage = new PictureBox
-            {
-                Dock = DockStyle.Fill,
-                SizeMode = PictureBoxSizeMode.Zoom,
-                BackColor = Color.FromArgb(245, 245, 245),
-                Cursor = Cursors.Hand
-            };
-            picBookImage.Click += (s, e) => BrowseImage();
-            picBookImage.Paint += PicBookImage_Paint;
-            panelImage.Controls.Add(picBookImage);
-            panelDetail.Controls.Add(panelImage);
-
-            // Image buttons - repositioned
-            btnBrowseImage = new Button
-            {
-                Text = "Chọn ảnh",
-                Location = new Point(145, 40),
-                Size = new Size(70, 28),
-                BackColor = Color.FromArgb(52, 152, 219),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 8),
-                Cursor = Cursors.Hand
-            };
-            btnBrowseImage.FlatAppearance.BorderSize = 0;
-            btnBrowseImage.Click += (s, e) => BrowseImage();
-            panelDetail.Controls.Add(btnBrowseImage);
-
-            btnRemoveImage = new Button
-            {
-                Text = "Xóa ảnh",
-                Location = new Point(220, 40),
-                Size = new Size(65, 28),
-                BackColor = Color.FromArgb(231, 76, 60),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 8),
-                Cursor = Cursors.Hand
-            };
-            btnRemoveImage.FlatAppearance.BorderSize = 0;
-            btnRemoveImage.Click += (s, e) => RemoveImage();
-            panelDetail.Controls.Add(btnRemoveImage);
-
-            // View detail button
-            var btnViewDetail = new Button
-            {
-                Text = "Xem chi tiết",
-                Location = new Point(145, 75),
-                Size = new Size(140, 28),
-                BackColor = Color.FromArgb(155, 89, 182),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 8),
-                Cursor = Cursors.Hand
-            };
-            btnViewDetail.FlatAppearance.BorderSize = 0;
-            btnViewDetail.Click += (s, e) => ShowBookDetail();
-            panelDetail.Controls.Add(btnViewDetail);
-
-            int detailY = 200;
-            int labelWidth = 70;
-            int inputWidth = 200;
-
-            AddDetailLabel("ISBN:", 15, detailY, panelDetail);
-            txtISBN = AddDetailTextBox(labelWidth + 15, detailY, inputWidth, panelDetail);
-            detailY += 30;
-
-            AddDetailLabel("Tên sách:", 15, detailY, panelDetail);
-            txtTitle = AddDetailTextBox(labelWidth + 15, detailY, inputWidth, panelDetail);
-            detailY += 30;
-
-            AddDetailLabel("Thể loại:", 15, detailY, panelDetail);
-            cboCategoryDetail = new ComboBox
-            {
-                Location = new Point(labelWidth + 15, detailY),
-                Size = new Size(inputWidth, 25),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            panelDetail.Controls.Add(cboCategoryDetail);
-            detailY += 30;
-
-            AddDetailLabel("Tác giả:", 15, detailY, panelDetail);
-            cboAuthorDetail = new ComboBox
-            {
-                Location = new Point(labelWidth + 15, detailY),
-                Size = new Size(inputWidth, 25),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            panelDetail.Controls.Add(cboAuthorDetail);
-            detailY += 30;
-
-            AddDetailLabel("NXB:", 15, detailY, panelDetail);
-            cboPublisher = new ComboBox
-            {
-                Location = new Point(labelWidth + 15, detailY),
-                Size = new Size(inputWidth, 25),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            panelDetail.Controls.Add(cboPublisher);
-            detailY += 30;
-
-            AddDetailLabel("Năm XB:", 15, detailY, panelDetail);
-            numYear = new NumericUpDown
-            {
-                Location = new Point(labelWidth + 15, detailY),
-                Size = new Size(80, 25),
-                Minimum = 1900,
-                Maximum = DateTime.Now.Year,
-                Value = DateTime.Now.Year
-            };
-            panelDetail.Controls.Add(numYear);
-            detailY += 30;
-
-            AddDetailLabel("Giá:", 15, detailY, panelDetail);
-            numPrice = new NumericUpDown
-            {
-                Location = new Point(labelWidth + 15, detailY),
-                Size = new Size(100, 25),
-                Minimum = 0,
-                Maximum = 10000000,
-                ThousandsSeparator = true
-            };
-            panelDetail.Controls.Add(numPrice);
-            detailY += 30;
-
-            AddDetailLabel("Số lượng:", 15, detailY, panelDetail);
-            numTotalCopies = new NumericUpDown
-            {
-                Location = new Point(labelWidth + 15, detailY),
-                Size = new Size(70, 25),
-                Minimum = 1,
-                Maximum = 1000,
-                Value = 1
-            };
-            panelDetail.Controls.Add(numTotalCopies);
-            detailY += 30;
-
-            AddDetailLabel("Vị trí:", 15, detailY, panelDetail);
-            txtLocation = AddDetailTextBox(labelWidth + 15, detailY, inputWidth, panelDetail);
-            detailY += 30;
-
-            AddDetailLabel("Mô tả:", 15, detailY, panelDetail);
-            txtDescription = new TextBox
-            {
-                Location = new Point(labelWidth + 15, detailY),
-                Size = new Size(inputWidth, 50),
-                Multiline = true
-            };
-            panelDetail.Controls.Add(txtDescription);
-            detailY += 60;
-
-            // Save/Cancel buttons
-            var btnSave = CreateButton("💾 Lưu", 15, detailY, Color.FromArgb(46, 204, 113));
-            btnSave.Size = new Size(90, 32);
-            btnSave.Click += BtnSave_Click;
-            panelDetail.Controls.Add(btnSave);
-
-            var btnCancel = CreateButton("❌ Hủy", 115, detailY, Color.FromArgb(149, 165, 166));
-            btnCancel.Size = new Size(90, 32);
-            btnCancel.Click += (s, e) => ClearDetailForm();
-            panelDetail.Controls.Add(btnCancel);
-
-            this.Controls.Add(panelDetail);
-        }
-
-        private void AddDetailLabel(string text, int x, int y, Panel parent)
-        {
-            var label = new Label
-            {
-                Text = text,
-                Location = new Point(x, y + 3),
-                AutoSize = true,
-                Font = new Font("Segoe UI", 9)
-            };
-            parent.Controls.Add(label);
-        }
-
-        private TextBox AddDetailTextBox(int x, int y, int width, Panel parent)
-        {
-            var textBox = new TextBox
-            {
-                Location = new Point(x, y),
-                Size = new Size(width, 28),
-                Font = new Font("Segoe UI", 9)
-            };
-            parent.Controls.Add(textBox);
-            return textBox;
-        }
-
-        private Button CreateButton(string text, int x, int y, Color color)
-        {
-            var btn = new Button
-            {
-                Text = text,
-                Location = new Point(x, y),
-                Size = new Size(110, 35),
-                BackColor = color,
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9),
-                Cursor = Cursors.Hand
-            };
-            btn.FlatAppearance.BorderSize = 0;
-            return btn;
+            dgvBooks.Columns["BookID"].Visible = false;
+            dgvBooks.Columns["ISBN"].Width = 100;
+            dgvBooks.Columns["Title"].Width = 250;
+            dgvBooks.Columns["CategoryName"].Width = 100;
+            dgvBooks.Columns["AuthorName"].Width = 120;
+            dgvBooks.Columns["TotalCopies"].Width = 60;
+            dgvBooks.Columns["AvailableCopies"].Width = 60;
+            dgvBooks.Columns["Location"].Width = 80;
         }
 
         private void LoadData()
         {
             try
             {
-                // Load categories
                 var categories = categoryDAO.GetAll();
                 cboCategory.Items.Clear();
                 cboCategory.Items.Add(new Category { CategoryID = 0, CategoryName = "-- Tất cả --" });
@@ -454,7 +105,6 @@ namespace LibraryManagement.Forms
                 cboCategoryDetail.DisplayMember = "CategoryName";
                 cboCategoryDetail.ValueMember = "CategoryID";
 
-                // Load authors
                 var authors = authorDAO.GetAll();
                 cboAuthor.Items.Clear();
                 cboAuthor.Items.Add(new Author { AuthorID = 0, AuthorName = "-- Tất cả --" });
@@ -468,14 +118,12 @@ namespace LibraryManagement.Forms
                 cboAuthorDetail.DisplayMember = "AuthorName";
                 cboAuthorDetail.ValueMember = "AuthorID";
 
-                // Load publishers
                 var publishers = publisherDAO.GetAll();
                 cboPublisher.Items.Clear();
                 cboPublisher.Items.AddRange(publishers.ToArray());
                 cboPublisher.DisplayMember = "PublisherName";
                 cboPublisher.ValueMember = "PublisherID";
 
-                // Load books
                 SearchBooks();
             }
             catch (Exception ex)
@@ -491,6 +139,7 @@ namespace LibraryManagement.Forms
                 string? keyword = string.IsNullOrWhiteSpace(txtSearch.Text) ? null : txtSearch.Text.Trim();
                 int? categoryId = (cboCategory.SelectedItem as Category)?.CategoryID;
                 if (categoryId == 0) categoryId = null;
+
                 int? authorId = (cboAuthor.SelectedItem as Author)?.AuthorID;
                 if (authorId == 0) authorId = null;
 
@@ -500,8 +149,14 @@ namespace LibraryManagement.Forms
                 foreach (var book in books)
                 {
                     dgvBooks.Rows.Add(
-                        book.BookID, book.ISBN, book.Title, book.CategoryName,
-                        book.AuthorName, book.TotalCopies, book.AvailableCopies, book.Location
+                        book.BookID,
+                        book.ISBN,
+                        book.Title,
+                        book.CategoryName,
+                        book.AuthorName,
+                        book.TotalCopies,
+                        book.AvailableCopies,
+                        book.Location
                     );
                 }
             }
@@ -513,7 +168,8 @@ namespace LibraryManagement.Forms
 
         private void DgvBooks_SelectionChanged(object? sender, EventArgs e)
         {
-            if (dgvBooks.CurrentRow == null) return;
+            if (dgvBooks.CurrentRow == null || dgvBooks.CurrentRow.Cells["BookID"].Value == null)
+                return;
 
             int bookId = Convert.ToInt32(dgvBooks.CurrentRow.Cells["BookID"].Value);
             currentBook = bookDAO.GetById(bookId);
@@ -556,10 +212,74 @@ namespace LibraryManagement.Forms
                 txtLocation.Text = currentBook.Location;
                 txtDescription.Text = currentBook.Description;
 
-                // Load book image
                 LoadBookImage(currentBook.ImagePath);
                 currentImagePath = currentBook.ImagePath;
             }
+        }
+
+        private void TxtSearch_TextChanged(object? sender, EventArgs e)
+        {
+            SearchBooks();
+        }
+
+        private void CboCategory_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            SearchBooks();
+        }
+
+        private void CboAuthor_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            SearchBooks();
+        }
+
+        private void ChkAvailableOnly_CheckedChanged(object? sender, EventArgs e)
+        {
+            SearchBooks();
+        }
+
+        private void DgvBooks_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+        {
+            EditBook();
+        }
+
+        private void BtnAdd_Click(object? sender, EventArgs e)
+        {
+            AddBook();
+        }
+
+        private void BtnEdit_Click(object? sender, EventArgs e)
+        {
+            EditBook();
+        }
+
+        private void BtnDelete_Click(object? sender, EventArgs e)
+        {
+            DeleteBook();
+        }
+
+        private void BtnRefresh_Click(object? sender, EventArgs e)
+        {
+            LoadData();
+        }
+
+        private void BtnBrowseImage_Click(object? sender, EventArgs e)
+        {
+            BrowseImage();
+        }
+
+        private void BtnRemoveImage_Click(object? sender, EventArgs e)
+        {
+            RemoveImage();
+        }
+
+        private void BtnViewDetail_Click(object? sender, EventArgs e)
+        {
+            ShowBookDetail();
+        }
+
+        private void BtnCancel_Click(object? sender, EventArgs e)
+        {
+            ClearDetailForm();
         }
 
         private void AddBook()
@@ -635,15 +355,12 @@ namespace LibraryManagement.Forms
 
                 if (currentBook == null)
                 {
-                    // Add new
                     book.AvailableCopies = book.TotalCopies;
                     bookDAO.Insert(book);
                     MessageBox.Show("Thêm sách thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
-                    // Update
-                    // Adjust available copies if total changed
                     int diff = book.TotalCopies - currentBook.TotalCopies;
                     book.AvailableCopies = Math.Max(0, currentBook.AvailableCopies + diff);
                     bookDAO.Update(book);
@@ -673,7 +390,6 @@ namespace LibraryManagement.Forms
             txtLocation.Clear();
             txtDescription.Clear();
 
-            // Clear image
             currentImagePath = null;
             if (picBookImage.Image != null)
             {
@@ -689,13 +405,11 @@ namespace LibraryManagement.Forms
         {
             if (picBookImage.Image == null)
             {
-                // Draw placeholder
                 var rect = picBookImage.ClientRectangle;
                 using (var brush = new SolidBrush(Color.FromArgb(200, 200, 200)))
                 {
                     e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
-                    // Draw book icon
                     var font = new Font("Segoe UI", 24);
                     var text = "📖";
                     var textSize = e.Graphics.MeasureString(text, font);
@@ -703,7 +417,6 @@ namespace LibraryManagement.Forms
                     var y = (rect.Height - textSize.Height) / 2 - 15;
                     e.Graphics.DrawString(text, font, brush, x, y);
 
-                    // Draw hint text
                     var hintFont = new Font("Segoe UI", 8);
                     var hint = "Nhấn để chọn ảnh";
                     var hintSize = e.Graphics.MeasureString(hint, hintFont);
@@ -716,7 +429,6 @@ namespace LibraryManagement.Forms
 
         private void LoadBookImage(string? imagePath)
         {
-            // Dispose old image
             if (picBookImage.Image != null)
             {
                 picBookImage.Image.Dispose();
@@ -767,18 +479,13 @@ namespace LibraryManagement.Forms
                 {
                     try
                     {
-                        // Generate new filename
                         string ext = Path.GetExtension(dialog.FileName);
                         string newFileName = $"book_{DateTime.Now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString().Substring(0, 8)}{ext}";
                         string destPath = Path.Combine(imagesFolder, newFileName);
 
-                        // Copy file to images folder
                         File.Copy(dialog.FileName, destPath, true);
 
-                        // Update current image path
                         currentImagePath = newFileName;
-
-                        // Load and display image
                         LoadBookImage(newFileName);
 
                         MessageBox.Show("Đã tải hình ảnh thành công!\n\n⚠️ Nhớ nhấn nút [💾 Lưu] để lưu thay đổi vào database.",
@@ -807,7 +514,6 @@ namespace LibraryManagement.Forms
 
             if (result == DialogResult.Yes)
             {
-                // Dispose and clear image
                 if (picBookImage.Image != null)
                 {
                     picBookImage.Image.Dispose();
@@ -853,19 +559,18 @@ namespace LibraryManagement.Forms
 
         private void SetupForm()
         {
-            this.Text = $"Chi tiết sách: {book.Title}";
-            this.Size = new Size(850, 580);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.BackColor = Color.White;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
+            Text = $"Chi tiết sách: {book.Title}";
+            Size = new Size(850, 580);
+            StartPosition = FormStartPosition.CenterParent;
+            BackColor = Color.White;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
 
-            // === LEFT PANEL - Image ===
             Panel panelLeft = new Panel
             {
                 Location = new Point(0, 0),
-                Size = new Size(220, this.ClientSize.Height),
+                Size = new Size(220, ClientSize.Height),
                 BackColor = Color.FromArgb(248, 249, 250)
             };
 
@@ -880,7 +585,6 @@ namespace LibraryManagement.Forms
             LoadBookImage(picBook);
             panelLeft.Controls.Add(picBook);
 
-            // Status
             Label lblStatus = new Label
             {
                 Text = book.IsAvailable ? "✅ Còn sách" : "❌ Hết sách",
@@ -901,13 +605,12 @@ namespace LibraryManagement.Forms
             };
             panelLeft.Controls.Add(lblQuantity);
 
-            this.Controls.Add(panelLeft);
+            Controls.Add(panelLeft);
 
-            // === RIGHT PANEL - Info ===
             Panel panelRight = new Panel
             {
                 Location = new Point(220, 0),
-                Size = new Size(this.ClientSize.Width - 220, this.ClientSize.Height - 50),
+                Size = new Size(ClientSize.Width - 220, ClientSize.Height - 50),
                 BackColor = Color.White,
                 AutoScroll = true,
                 Padding = new Padding(10)
@@ -917,7 +620,6 @@ namespace LibraryManagement.Forms
             int labelX = 15;
             int valueX = 110;
 
-            // Title
             Label lblTitle = new Label
             {
                 Text = book.Title,
@@ -930,7 +632,6 @@ namespace LibraryManagement.Forms
             panelRight.Controls.Add(lblTitle);
             y += lblTitle.PreferredHeight + 15;
 
-            // Info rows
             AddRow("📖 ISBN:", book.ISBN ?? "N/A", labelX, valueX, ref y, panelRight);
             AddRow("✍️ Tác giả:", book.AuthorName ?? "N/A", labelX, valueX, ref y, panelRight);
             AddRow("📁 Thể loại:", book.CategoryName ?? "N/A", labelX, valueX, ref y, panelRight);
@@ -941,7 +642,6 @@ namespace LibraryManagement.Forms
 
             y += 5;
 
-            // Description
             Label lblDescTitle = new Label
             {
                 Text = "📝 Mô tả:",
@@ -967,7 +667,6 @@ namespace LibraryManagement.Forms
             panelRight.Controls.Add(txtDesc);
             y += 55;
 
-            // Borrowers section
             Label lblBorrowers = new Label
             {
                 Text = "👥 Người đang mượn sách này:",
@@ -1009,13 +708,12 @@ namespace LibraryManagement.Forms
             LoadBorrowers(dgvBorrowers);
             panelRight.Controls.Add(dgvBorrowers);
 
-            this.Controls.Add(panelRight);
+            Controls.Add(panelRight);
 
-            // === BOTTOM PANEL - Close Button ===
             Panel panelBottom = new Panel
             {
-                Location = new Point(220, this.ClientSize.Height - 50),
-                Size = new Size(this.ClientSize.Width - 220, 50),
+                Location = new Point(220, ClientSize.Height - 50),
+                Size = new Size(ClientSize.Width - 220, 50),
                 BackColor = Color.FromArgb(248, 249, 250)
             };
 
@@ -1031,10 +729,10 @@ namespace LibraryManagement.Forms
                 Cursor = Cursors.Hand
             };
             btnClose.FlatAppearance.BorderSize = 0;
-            btnClose.Click += (s, e) => this.Close();
+            btnClose.Click += (s, e) => Close();
             panelBottom.Controls.Add(btnClose);
 
-            this.Controls.Add(panelBottom);
+            Controls.Add(panelBottom);
         }
 
         private void AddRow(string label, string value, int labelX, int valueX, ref int y, Panel parent)
@@ -1146,7 +844,9 @@ namespace LibraryManagement.Forms
                     }
                 }
             }
-            catch { }
+            catch
+            {
+            }
         }
     }
 }

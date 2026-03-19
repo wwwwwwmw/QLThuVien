@@ -1,0 +1,70 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "D:\\Documents\\QLThuVien\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A1234567-1234-1234-1234-123456789ABC}|LibraryManagement\\LibraryManagement.csproj|d:\\documents\\qlthuvien\\librarymanagement\\forms\\formborrowreturndetails.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{A1234567-1234-1234-1234-123456789ABC}|LibraryManagement\\LibraryManagement.csproj|solutionrelative:librarymanagement\\forms\\formborrowreturndetails.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A1234567-1234-1234-1234-123456789ABC}|LibraryManagement\\LibraryManagement.csproj|D:\\Documents\\QLThuVien\\librarymanagement\\forms\\formborrow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{A1234567-1234-1234-1234-123456789ABC}|LibraryManagement\\LibraryManagement.csproj|solutionrelative:librarymanagement\\forms\\formborrow.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A1234567-1234-1234-1234-123456789ABC}|LibraryManagement\\LibraryManagement.csproj|D:\\Documents\\QLThuVien\\librarymanagement\\forms\\formbookmanagement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{A1234567-1234-1234-1234-123456789ABC}|LibraryManagement\\LibraryManagement.csproj|solutionrelative:librarymanagement\\forms\\formbookmanagement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "FormBorrowReturnDetails.cs [Design]",
+              "DocumentMoniker": "D:\\Documents\\QLThuVien\\LibraryManagement\\Forms\\FormBorrowReturnDetails.cs",
+              "RelativeDocumentMoniker": "LibraryManagement\\Forms\\FormBorrowReturnDetails.cs",
+              "ToolTip": "D:\\Documents\\QLThuVien\\LibraryManagement\\Forms\\FormBorrowReturnDetails.cs [Design]",
+              "RelativeToolTip": "LibraryManagement\\Forms\\FormBorrowReturnDetails.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-19T04:25:46.601Z",
+              "EditorCaption": " [Design]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "FormBorrow.cs [Design]",
+              "DocumentMoniker": "D:\\Documents\\QLThuVien\\LibraryManagement\\Forms\\FormBorrow.cs",
+              "RelativeDocumentMoniker": "LibraryManagement\\Forms\\FormBorrow.cs",
+              "ToolTip": "D:\\Documents\\QLThuVien\\LibraryManagement\\Forms\\FormBorrow.cs [Design]",
+              "RelativeToolTip": "LibraryManagement\\Forms\\FormBorrow.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-19T04:25:39.655Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "FormBookManagement.cs [Design]",
+              "DocumentMoniker": "D:\\Documents\\QLThuVien\\LibraryManagement\\Forms\\FormBookManagement.cs",
+              "RelativeDocumentMoniker": "LibraryManagement\\Forms\\FormBookManagement.cs",
+              "ToolTip": "D:\\Documents\\QLThuVien\\LibraryManagement\\Forms\\FormBookManagement.cs [Design]",
+              "RelativeToolTip": "LibraryManagement\\Forms\\FormBookManagement.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-19T04:25:34.898Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

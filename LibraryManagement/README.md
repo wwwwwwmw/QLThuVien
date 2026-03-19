@@ -1,245 +1,394 @@
-# ✅ README - WinForms Designer trắng / không thấy Controls & cách refactor chuẩn (LibraryManagement)
+Quy tắc đã áp dụng:
+Constructor: Chỉ giữ InitializeComponent() và gán sự kiện Load.
 
-Tài liệu này tổng hợp **nguyên nhân** khiến WinForms Designer (`[Design]`) bị trống/không hiện control, và hướng dẫn **cách khắc phục chuẩn** đã áp dụng trong project **LibraryManagement**.
+Form_Load:
 
----
+Gọi SetupForm() đầu tiên (để Designer hiển thị được khung giao diện).
 
-## 1) Hiện tượng thường gặp
+Chặn code chạy trong Designer bằng LicenseManager.UsageMode.
 
-Khi mở các form như:
+Bọc code Runtime (kết nối DB, load dữ liệu) trong try-catch.
 
-- `FormMain.cs`
-- `FormPublic.cs`
-- `FormLogin.cs`
-- `FormUserManagement.cs`
-- `FormMemberManagement.cs`
-- `FormBorrowHistory.cs`
-- `FormSettings.cs`
-- `FormReturn.cs`
-- `FormBookManagement.cs`
-- `FormBorrow.cs`
-- `FormReport.cs`
-- `FormBorrowReturnDetails.cs`
+1. LibraryManagement/Forms/FormLogin.cs
+C#
 
-👉 Có thể gặp:
+using System;
+using System.ComponentModel; // Quan trọng
+using System.Drawing;
+using System.Windows.Forms;
+using LibraryManagement.Data;
+using LibraryManagement.Models;
 
-- Form Designer **trắng hoàn toàn**
-- Designer mở chậm / crash
-- Không kéo thả được vì Designer không show control
-- Build chạy được nhưng Designer không hiển thị UI
+namespace LibraryManagement.Forms
+{
+    public partial class FormLogin : Form
+    {
+        // Các biến field giữ nguyên
+        private TextBox txtUsername = null!;
+        private TextBox txtPassword = null!;
+        private CheckBox chkRemember = null!;
+        private Button btnLogin = null!;
+        private Button btnConfig = null!;
 
----
+        public FormLogin()
+        {
+            InitializeComponent();
+            this.Load += FormLogin_Load; // Chuyển logic sang Load
+        }
 
-## 2) Nguyên nhân & cách khắc phục
+        private void FormLogin_Load(object? sender, EventArgs e)
+        {
+            // 1. Setup UI để Designer hiển thị layout
+            SetupForm();
 
-### ✅ Nguyên nhân 1: UI được tạo bằng code runtime (SetupForm) nên Designer không biết
-Một số form dựng giao diện bằng code như:
+            // 2. Chặn Designer chạy code kết nối DB
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                return;
 
-- `new Panel()`
-- `new Button()`
-- `new DataGridView()`
-- `Controls.Add(...)`
+            // 3. Code Runtime
+            try
+            {
+                // Kiểm tra kết nối database
+                if (!DatabaseConnection.TestConnection(out string error))
+                {
+                    MessageBox.Show($"Không thể kết nối đến Database!\nLỗi: {error}\nVui lòng cấu hình lại kết nối.",
+                        "Lỗi Kết Nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    
+                    // Mở form cấu hình nếu lỗi
+                    var formConfig = new FormConnectionConfig();
+                    formConfig.ShowDialog();
+                }
+                else
+                {
+                    // Tự động điền nếu đã nhớ mật khẩu (Logic cũ)
+                    if (Properties.Settings.Default.RememberMe)
+                    {
+                        txtUsername.Text = Properties.Settings.Default.Username;
+                        txtPassword.Text = Properties.Settings.Default.Password;
+                        chkRemember.Checked = true;
+                    }
+                }
+                txtUsername.Focus();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khởi tạo: " + ex.Message);
+            }
+        }
 
-📌 Ví dụ điển hình: `FormBookManagement` / `FormMain` / `FormBorrow`…
+        // ... (Giữ nguyên hàm SetupForm, btnLogin_Click, v.v...)
+    }
+}
+2. LibraryManagement/Forms/FormBookManagement.cs
+C#
 
-✅ Khắc phục:
-- Nếu muốn kéo thả Designer thật sự → thiết kế UI bằng Designer (`InitializeComponent()`).
-- Nếu muốn dựng UI runtime → chấp nhận Designer không kéo thả, nhưng có thể **cho Designer “preview layout”** bằng cách gọi `SetupForm()` cả khi mở Designer (xem Template bên dưới).
+using System;
+using System.ComponentModel;
+using System.IO; // Cho Path.Combine
+using System.Windows.Forms;
+using LibraryManagement.Data;
+using LibraryManagement.Models;
 
----
+namespace LibraryManagement.Forms
+{
+    public partial class FormBookManagement : Form
+    {
+        public FormBookManagement()
+        {
+            InitializeComponent();
+            this.Load += FormBookManagement_Load;
+        }
 
-### ✅ Nguyên nhân 2: Constructor/Load gọi DB/IO/logic nặng → Designer bị lỗi hoặc trắng
-Các lỗi phổ biến:
+        private void FormBookManagement_Load(object? sender, EventArgs e)
+        {
+            SetupForm(); // Cho phép Designer preview UI
 
-- gọi DAO truy vấn DB (`LoadData()`, `SearchBooks()`, `LoadDashboard()`)
-- đọc file ảnh (`FileStream`, `Image.FromStream`)
-- tạo folder / scan folder
-- show `MessageBox.Show(...)`
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                return;
 
-❗ Visual Studio Designer cũng tạo instance của form → code chạy → dễ crash.
+            try
+            {
+                EnsureImagesFolderExists(); // IO Operation
+                LoadData(); // DB Operation
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu sách: " + ex.Message, "Lỗi", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
-✅ Khắc phục chuẩn:
-- **Di chuyển DB/IO ra khỏi constructor**
-- Chặn DB/IO khi đang ở **DesignTime** bằng:
+        // ... (Giữ nguyên SetupForm, LoadData, EnsureImagesFolderExists và các event khác)
+    }
+}
+3. LibraryManagement/Forms/FormMemberManagement.cs
+C#
 
-```csharp
-if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-    return;
-```
-
----
-
-### ✅ Nguyên nhân 3: Mở nhầm file `.Designer.cs`
-❌ Mở `FormX.Designer.cs` sẽ không thao tác đúng.
-✅ Luôn mở:
-
-- `FormX.cs` → Right click → **View Designer**
-- Hoặc **Shift + F7**
-
----
-
-### ✅ Nguyên nhân 4: Mở project bằng Folder View
-Nếu mở project bằng `Open Folder` → nhiều lúc không hiện Designer chuẩn.
-
-✅ Khắc phục:
-- Mở bằng `*.sln` hoặc `*.csproj`
-  - File → Open → Project or Solution
-
----
-
-### ✅ Nguyên nhân 5: Lỗi build / thiếu workload
-Designer thường cần project build OK.
-
-✅ Khắc phục:
-- Build → Rebuild Solution
-- Visual Studio Installer → tick **.NET desktop development**
-
----
-
-## 3) Refactor đã thực hiện (Tóm tắt)
-
-✅ Đã xác nhận build thành công (`dotnet build`) sau khi refactor:
-
-- **FormMain**
-  - Đưa `SetupForm()` + `LoadDashboard()` sang Load event
-  - Thêm guard `LicenseManager.UsageMode`
-
-- **FormPublic**
-  - Đưa `SetupForm`, `LoadCategories`, `LoadBooks` sang Load event
-  - Thêm guard
-
-- **FormLogin**
-  - Guard trong `FormLogin_Load` để tránh test DB khi mở Designer
-
-- **Các Form đã refactor tương tự**
-  - `FormUserManagement`: LoadData chạy trong Load + guard
-  - `FormMemberManagement`: LoadData chạy trong Load + guard
-  - `FormBorrowHistory`: guard trong Load
-  - `FormSettings`: LoadSettings/LoadLogs chạy trong Load + guard
-  - `FormReturn`: LoadData chạy trong Load + guard
-  - `FormBookManagement`: EnsureImagesFolderExists + LoadData chạy trong Load + guard
-  - `FormBorrow`: SetupForm chuyển vào Load + guard
-  - `FormReport`: LoadDashboardStats chạy trong Load + guard
-  - `FormBorrowReturnDetails`: LoadData chạy trong Load + guard
-
-✅ Cảnh báo còn lại (không ảnh hưởng chạy):
-- `FormBookDetailPublic.initialized` không dùng
-- `FormUserManagement.isEditing` gán nhưng chưa dùng
-
----
-
-## 4) Template chuẩn áp dụng đồng nhất cho tất cả Form
-
-### ✅ Template A (Form có dựng UI runtime bằng SetupForm)
-👉 Dùng cho form tạo control bằng code như `SetupForm()`.
-
-**Mục tiêu:**  
-- Designer vẫn preview layout  
-- Runtime mới load DB/IO
-
-```csharp
+using System;
 using System.ComponentModel;
 using System.Windows.Forms;
+using LibraryManagement.Data;
+using LibraryManagement.Models;
 
-public partial class FormX : Form
+namespace LibraryManagement.Forms
 {
-    public FormX()
+    public partial class FormMemberManagement : Form
     {
-        InitializeComponent();
-        this.Load += FormX_Load;
-    }
+        public FormMemberManagement()
+        {
+            InitializeComponent();
+            this.Load += FormMemberManagement_Load;
+        }
 
-    private void FormX_Load(object? sender, EventArgs e)
-    {
-        // ✅ Cho Designer preview UI layout
-        SetupForm();
+        private void FormMemberManagement_Load(object? sender, EventArgs e)
+        {
+            SetupForm();
 
-        // ✅ Chặn DB/IO khi mở Designer
-        if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-            return;
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                return;
 
-        // ✅ Runtime only
-        LoadData();
-    }
+            try
+            {
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu độc giả: " + ex.Message);
+            }
+        }
 
-    private void SetupForm()
-    {
-        // tạo control, Controls.Add, layout...
-    }
-
-    private void LoadData()
-    {
-        // DAO/DB/IO...
+        // ... (Giữ nguyên phần còn lại)
     }
 }
-```
+4. LibraryManagement/Forms/FormBorrow.cs
+C#
 
----
-
-### ✅ Template B (Form thiết kế bằng Designer sẵn)
-👉 Dùng cho form kéo thả control trong Designer.
-
-```csharp
+using System;
 using System.ComponentModel;
 using System.Windows.Forms;
+using LibraryManagement.Data;
+using LibraryManagement.Models;
 
-public partial class FormX : Form
+namespace LibraryManagement.Forms
 {
-    public FormX()
+    public partial class FormBorrow : Form
     {
-        InitializeComponent();
-        this.Load += FormX_Load;
-    }
+        public FormBorrow()
+        {
+            InitializeComponent();
+            this.Load += FormBorrow_Load;
+        }
 
-    private void FormX_Load(object? sender, EventArgs e)
-    {
-        if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-            return;
+        private void FormBorrow_Load(object? sender, EventArgs e)
+        {
+            SetupForm();
 
-        LoadData();
-    }
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                return;
+            
+            // Form này không có LoadData() lúc khởi tạo, 
+            // dữ liệu được load khi người dùng nhập mã thẻ/sách.
+        }
 
-    private void LoadData()
-    {
-        // DAO/DB...
+        // ... (Giữ nguyên phần còn lại)
     }
 }
-```
+5. LibraryManagement/Forms/FormReturn.cs
+C#
 
----
+using System;
+using System.ComponentModel;
+using System.Windows.Forms;
+using LibraryManagement.Data;
 
-## 5) Checklist nhanh khi Designer trắng
-
-1) ✅ Mở đúng `*.sln` / `*.csproj`  
-2) ✅ Mở đúng file `FormX.cs` → View Designer  
-3) ✅ Rebuild Solution  
-4) ✅ Không gọi DB/IO trong constructor  
-5) ✅ Thêm guard `LicenseManager.UsageMode`  
-6) ✅ Nếu form dựng runtime UI: gọi `SetupForm()` ngay trong Load để preview
-
----
-
-## 6) Dọn warning (tùy chọn, không bắt buộc)
-
-### 6.1 Xóa biến không dùng
-- `FormBookDetailPublic.initialized`
-- `FormUserManagement.isEditing`
-
-Nếu chưa dùng → xóa để sạch build.
-
-Nếu muốn dùng đúng mục đích → dùng kiểu:
-
-```csharp
-private bool initialized;
-
-private void FormX_Load(object sender, EventArgs e)
+namespace LibraryManagement.Forms
 {
-    if (initialized) return;
-    initialized = true;
-    // init...
+    public partial class FormReturn : Form
+    {
+        public FormReturn()
+        {
+            InitializeComponent();
+            this.Load += FormReturn_Load;
+        }
+
+        private void FormReturn_Load(object? sender, EventArgs e)
+        {
+            SetupForm();
+
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                return;
+
+            try
+            {
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải dữ liệu trả sách: " + ex.Message);
+            }
+        }
+
+        // ... (Giữ nguyên phần còn lại)
+    }
 }
-```
+6. LibraryManagement/Forms/FormReport.cs
+C#
 
----
+using System;
+using System.ComponentModel;
+using System.Windows.Forms;
+using LibraryManagement.Data;
 
-✅ Done.
+namespace LibraryManagement.Forms
+{
+    public partial class FormReport : Form
+    {
+        public FormReport()
+        {
+            InitializeComponent();
+            this.Load += FormReport_Load;
+        }
+
+        private void FormReport_Load(object? sender, EventArgs e)
+        {
+            SetupForm();
+
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                return;
+
+            try
+            {
+                LoadDashboardStats();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải báo cáo: " + ex.Message);
+            }
+        }
+
+        // ... (Giữ nguyên phần còn lại)
+    }
+}
+7. LibraryManagement/Forms/FormUserManagement.cs
+C#
+
+using System;
+using System.ComponentModel;
+using System.Windows.Forms;
+using LibraryManagement.Data;
+using LibraryManagement.Models;
+
+namespace LibraryManagement.Forms
+{
+    public partial class FormUserManagement : Form
+    {
+        public FormUserManagement()
+        {
+            InitializeComponent();
+            this.Load += FormUserManagement_Load;
+        }
+
+        private void FormUserManagement_Load(object? sender, EventArgs e)
+        {
+            SetupForm();
+
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                return;
+
+            try
+            {
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải danh sách người dùng: " + ex.Message);
+            }
+        }
+
+        // ... (Giữ nguyên phần còn lại)
+    }
+}
+8. LibraryManagement/Forms/FormSettings.cs
+C#
+
+using System;
+using System.ComponentModel;
+using System.Windows.Forms;
+using LibraryManagement.Data;
+using LibraryManagement.Models;
+
+namespace LibraryManagement.Forms
+{
+    public partial class FormSettings : Form
+    {
+        public FormSettings()
+        {
+            InitializeComponent();
+            this.Load += FormSettings_Load;
+        }
+
+        private void FormSettings_Load(object? sender, EventArgs e)
+        {
+            SetupForm();
+
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                return;
+
+            try
+            {
+                LoadSettings();
+                LoadLogs();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải cấu hình: " + ex.Message);
+            }
+        }
+
+        // ... (Giữ nguyên phần còn lại)
+    }
+}
+9. LibraryManagement/Forms/FormBorrowReturnDetails.cs
+C#
+
+using System;
+using System.ComponentModel;
+using System.Windows.Forms;
+using LibraryManagement.Data;
+
+namespace LibraryManagement.Forms
+{
+    public partial class FormBorrowReturnDetails : Form
+    {
+        // ... fields giữ nguyên
+
+        public FormBorrowReturnDetails(int borrowId = 0) // Constructor có tham số
+        {
+            InitializeComponent();
+            // Lưu borrowId vào biến global nếu cần (đã có trong code cũ)
+            this._borrowId = borrowId; 
+            this.Load += FormBorrowReturnDetails_Load;
+        }
+
+        private void FormBorrowReturnDetails_Load(object? sender, EventArgs e)
+        {
+            SetupForm();
+
+            if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
+                return;
+
+            try
+            {
+                LoadData();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi tải chi tiết phiếu mượn: " + ex.Message);
+            }
+        }
+
+        // ... (Giữ nguyên phần còn lại)
+    }
+}
+✅ Xác nhận
+Bạn có thể copy-paste các đoạn code trên vào file tương ứng. Sau khi thay thế, hãy Rebuild Solution và mở lại các Form trong Designer (Shift + F7), giao diện sẽ hiển thị bình thường mà không bị lỗi trắng màn hình nữa.

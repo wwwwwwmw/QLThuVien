@@ -13,15 +13,6 @@ namespace LibraryManagement.Forms
     /// </summary>
     public partial class FormBorrow : Form
     {
-        private TextBox txtMemberCode = null!;
-        private Label lblMemberInfo = null!;
-        private Label lblMemberStatus = null!;
-        private DataGridView dgvBorrowing = null!;
-
-        private TextBox txtBookSearch = null!;
-        private DataGridView dgvBooks = null!;
-        private NumericUpDown numDays = null!;
-
         private MemberDAO memberDAO = new MemberDAO();
         private BookDAO bookDAO = new BookDAO();
         private BorrowRecordDAO borrowDAO = new BorrowRecordDAO();
@@ -34,197 +25,6 @@ namespace LibraryManagement.Forms
         {
             InitializeComponent();
             this.Load += FormBorrow_Load;
-        }
-
-        private void SetupForm()
-        {
-            // Title
-            var lblTitle = new Label
-            {
-                Text = "MƯỢN SÁCH",
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(20, 10),
-                AutoSize = true
-            };
-            this.Controls.Add(lblTitle);
-
-            // Left panel - Member info
-            var panelMember = new Panel
-            {
-                Location = new Point(20, 60),
-                Size = new Size(500, 200),
-                BackColor = Color.White,
-                Padding = new Padding(15)
-            };
-
-            var lblMemberTitle = new Label
-            {
-                Text = "👤 Thông tin độc giả",
-                Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                Location = new Point(15, 10),
-                AutoSize = true
-            };
-            panelMember.Controls.Add(lblMemberTitle);
-
-            var lblCode = new Label { Text = "Mã thẻ:", Location = new Point(15, 45), AutoSize = true };
-            txtMemberCode = new TextBox
-            {
-                Location = new Point(80, 42),
-                Size = new Size(150, 28),
-                Font = new Font("Segoe UI", 10)
-            };
-            txtMemberCode.KeyPress += TxtMemberCode_KeyPress;
-
-            var btnFind = new Button
-            {
-                Text = "Tìm kiếm",
-                Location = new Point(240, 40),
-                Size = new Size(85, 30),
-                BackColor = Color.FromArgb(52, 152, 219),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            btnFind.FlatAppearance.BorderSize = 0;
-            btnFind.Click += BtnFindMember_Click;
-
-            lblMemberInfo = new Label
-            {
-                Location = new Point(15, 80),
-                Size = new Size(460, 60),
-                Font = new Font("Segoe UI", 10)
-            };
-
-            lblMemberStatus = new Label
-            {
-                Location = new Point(15, 145),
-                Size = new Size(460, 25),
-                Font = new Font("Segoe UI", 10, FontStyle.Bold)
-            };
-
-            panelMember.Controls.AddRange(new Control[] { lblCode, txtMemberCode, btnFind, lblMemberInfo, lblMemberStatus });
-            this.Controls.Add(panelMember);
-
-            // Member's current borrowing
-            var lblCurrentBorrow = new Label
-            {
-                Text = "📚 Sách đang mượn:",
-                Location = new Point(20, 270),
-                AutoSize = true,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold)
-            };
-            this.Controls.Add(lblCurrentBorrow);
-
-            dgvBorrowing = new DataGridView
-            {
-                Location = new Point(20, 295),
-                Size = new Size(500, 180),
-                BackgroundColor = Color.White,
-                BorderStyle = BorderStyle.None,
-                RowHeadersVisible = false,
-                AllowUserToAddRows = false,
-                ReadOnly = true,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect
-            };
-            dgvBorrowing.Columns.Add("BookTitle", "Tên sách");
-            dgvBorrowing.Columns.Add("BorrowDate", "Ngày mượn");
-            dgvBorrowing.Columns.Add("DueDate", "Hạn trả");
-            dgvBorrowing.Columns.Add("Status", "Trạng thái");
-            dgvBorrowing.Columns["BookTitle"]!.Width = 220;
-            dgvBorrowing.Columns["BorrowDate"]!.Width = 90;
-            dgvBorrowing.Columns["DueDate"]!.Width = 90;
-            dgvBorrowing.Columns["Status"]!.Width = 90;
-            this.Controls.Add(dgvBorrowing);
-
-            // Right panel - Book selection
-            var panelBook = new Panel
-            {
-                Location = new Point(540, 60),
-                Size = new Size(660, 420),
-                BackColor = Color.White,
-                Padding = new Padding(15)
-            };
-
-            var lblBookTitle = new Label
-            {
-                Text = "Chọn sách mượn",
-                Font = new Font("Segoe UI", 11, FontStyle.Bold),
-                Location = new Point(15, 10),
-                AutoSize = true
-            };
-            panelBook.Controls.Add(lblBookTitle);
-
-            var lblSearch = new Label { Text = "Tìm sách:", Location = new Point(15, 45), AutoSize = true };
-            txtBookSearch = new TextBox
-            {
-                Location = new Point(80, 42),
-                Size = new Size(300, 28),
-                Font = new Font("Segoe UI", 10),
-                PlaceholderText = "Nhập tên sách hoặc ISBN..."
-            };
-            txtBookSearch.TextChanged += TxtBookSearch_TextChanged;
-
-            dgvBooks = new DataGridView
-            {
-                Location = new Point(15, 80),
-                Size = new Size(620, 250),
-                BackgroundColor = Color.White,
-                BorderStyle = BorderStyle.FixedSingle,
-                RowHeadersVisible = false,
-                AllowUserToAddRows = false,
-                ReadOnly = true,
-                SelectionMode = DataGridViewSelectionMode.FullRowSelect
-            };
-            dgvBooks.SelectionChanged += DgvBooks_SelectionChanged;
-
-            dgvBooks.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
-            {
-                BackColor = Color.FromArgb(52, 73, 94),
-                ForeColor = Color.White,
-                Font = new Font("Segoe UI", 9, FontStyle.Bold)
-            };
-
-            dgvBooks.Columns.Add("BookID", "ID");
-            dgvBooks.Columns.Add("ISBN", "ISBN");
-            dgvBooks.Columns.Add("Title", "Tên sách");
-            dgvBooks.Columns.Add("AuthorName", "Tác giả");
-            dgvBooks.Columns.Add("AvailableCopies", "Còn lại");
-            dgvBooks.Columns.Add("Location", "Vị trí");
-            dgvBooks.Columns["BookID"]!.Visible = false;
-            dgvBooks.Columns["ISBN"]!.Width = 100;
-            dgvBooks.Columns["Title"]!.Width = 220;
-            dgvBooks.Columns["AuthorName"]!.Width = 120;
-            dgvBooks.Columns["AvailableCopies"]!.Width = 70;
-            dgvBooks.Columns["Location"]!.Width = 80;
-
-            var lblDays = new Label { Text = "Số ngày mượn:", Location = new Point(15, 345), AutoSize = true };
-            numDays = new NumericUpDown
-            {
-                Location = new Point(110, 342),
-                Size = new Size(70, 28),
-                Minimum = 1,
-                Maximum = 60,
-                Value = settingDAO.GetIntValue(SystemSetting.KEY_MAX_BORROW_DAYS, 14)
-            };
-
-            var btnBorrow = new Button
-            {
-                Text = "Mượn sách",
-                Location = new Point(200, 340),
-                Size = new Size(120, 40),
-                BackColor = Color.FromArgb(46, 204, 113),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 11, FontStyle.Bold)
-            };
-            btnBorrow.FlatAppearance.BorderSize = 0;
-            btnBorrow.Click += BtnBorrow_Click;
-
-            panelBook.Controls.AddRange(new Control[] { lblSearch, txtBookSearch, dgvBooks, lblDays, numDays, btnBorrow });
-            this.Controls.Add(panelBook);
-
-            // Load available books
-            LoadBooks();
         }
 
         private void TxtMemberCode_KeyPress(object? sender, KeyPressEventArgs e)
@@ -432,12 +232,24 @@ namespace LibraryManagement.Forms
 
         private void FormBorrow_Load(object? sender, EventArgs e)
         {
-            SetupForm();
-
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
             {
                 return;
             }
+
+            try
+            {
+                int maxDays = settingDAO.GetIntValue(SystemSetting.KEY_MAX_BORROW_DAYS, 14);
+                maxDays = Math.Max((int)numDays.Minimum, Math.Min((int)numDays.Maximum, maxDays));
+                numDays.Value = maxDays;
+            }
+            catch
+            {
+                numDays.Value = 14;
+            }
+
+            // Load available books
+            LoadBooks();
         }
     }
 }

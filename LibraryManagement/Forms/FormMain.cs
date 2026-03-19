@@ -1,9 +1,11 @@
-using System;
-using System.ComponentModel;
-using System.Drawing;
-using System.Windows.Forms;
 using LibraryManagement.Data;
 using LibraryManagement.Models;
+using System;
+using System.ComponentModel;
+using System.Data.SqlTypes;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
 
 namespace LibraryManagement.Forms
 {
@@ -12,11 +14,6 @@ namespace LibraryManagement.Forms
     /// </summary>
     public partial class FormMain : Form
     {
-        private Panel panelMenu = null!;
-        private Panel panelContent = null!;
-        private Panel panelHeader = null!;
-        private Label lblCurrentUser = null!;
-        private Label lblDateTime = null!;
         private System.Windows.Forms.Timer timerDateTime = null!;
 
         // Dashboard controls
@@ -35,110 +32,51 @@ namespace LibraryManagement.Forms
         public FormMain()
         {
             InitializeComponent();
-            this.Load += FormMain_Load;
+            Load += FormMain_Load;
         }
-
-
 
         private void FormMain_Load(object? sender, EventArgs e)
         {
-            SetupForm();
-
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
-            {
                 return;
-            }
 
-            LoadDashboard();
-        }
+            BackColor = Color.FromArgb(236, 240, 241);
 
-        private void SetupForm()
-        {
-            this.BackColor = Color.FromArgb(236, 240, 241);
+            lblCurrentUser.Text = $"👤 {CurrentUser.User?.FullName ?? "Người dùng"} ({CurrentUser.User?.Role ?? "N/A"})";
+            lblDateTime.Text = $"🕐 {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
 
-            // Header Panel
-            panelHeader = new Panel
-            {
-                Dock = DockStyle.Top,
-                Height = 60,
-                BackColor = Color.FromArgb(41, 128, 185)
-            };
-
-            Label lblTitle = new Label
-            {
-                Text = "📚 HỆ THỐNG QUẢN LÝ THƯ VIỆN",
-                Font = new Font("Segoe UI", 16, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(20, 15),
-                AutoSize = true
-            };
-
-            lblCurrentUser = new Label
-            {
-                Text = $"👤 {CurrentUser.User?.FullName} ({CurrentUser.User?.Role})",
-                Font = new Font("Segoe UI", 10),
-                ForeColor = Color.White,
-                TextAlign = ContentAlignment.MiddleRight,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Size = new Size(300, 25)
-            };
-
-            lblDateTime = new Label
-            {
-                Font = new Font("Segoe UI", 10),
-                ForeColor = Color.White,
-                TextAlign = ContentAlignment.MiddleRight,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Size = new Size(300, 25)
-            };
-
-            panelHeader.Controls.AddRange(new Control[] { lblTitle, lblCurrentUser, lblDateTime });
-
-            // Xử lý resize để đặt vị trí các label bên phải
-            panelHeader.Resize += (s, e) =>
-            {
-                lblCurrentUser.Location = new Point(panelHeader.Width - 320, 10);
-                lblDateTime.Location = new Point(panelHeader.Width - 320, 32);
-            };
-
-            // Set vị trí ban đầu khi form load
-            this.Load += (s, e) =>
-            {
-                lblCurrentUser.Location = new Point(panelHeader.Width - 320, 10);
-                lblDateTime.Location = new Point(panelHeader.Width - 320, 32);
-            };
-
-            // Menu Panel
-            panelMenu = new Panel
-            {
-                Dock = DockStyle.Left,
-                Width = 220,
-                BackColor = Color.FromArgb(44, 62, 80)
-            };
+            panelMenu.Controls.Clear();
+            panelContent.Controls.Clear();
 
             SetupMenu();
 
-            // Content Panel
-            panelContent = new Panel
-            {
-                Dock = DockStyle.Fill,
-                BackColor = Color.FromArgb(236, 240, 241),
-                Padding = new Padding(20)
-            };
-
-            // Add controls in correct order
-            this.Controls.Add(panelContent);
-            this.Controls.Add(panelMenu);
-            this.Controls.Add(panelHeader);
-
+            panelContent.Resize -= PanelContent_Resize;
             panelContent.Resize += PanelContent_Resize;
 
-            // Timer for datetime
+            panelHeader.Resize -= PanelHeader_Resize;
+            panelHeader.Resize += PanelHeader_Resize;
+            PanelHeader_Resize(null, EventArgs.Empty);
+
             timerDateTime = new System.Windows.Forms.Timer { Interval = 1000 };
-            timerDateTime.Tick += (s, e) => lblDateTime.Text = $"🕐 {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
+            timerDateTime.Tick += TimerDateTime_Tick;
             timerDateTime.Start();
 
             SetupDashboard();
+            LoadDashboard();
+        }
+
+        private void TimerDateTime_Tick(object? sender, EventArgs e)
+        {
+            lblDateTime.Text = $"🕐 {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
+        }
+
+        private void PanelHeader_Resize(object? sender, EventArgs e)
+        {
+            if (lblCurrentUser != null)
+                lblCurrentUser.Location = new Point(panelHeader.Width - 320, 10);
+
+            if (lblDateTime != null)
+                lblDateTime.Location = new Point(panelHeader.Width - 320, 32);
         }
 
         private void SetupMenu()
@@ -147,37 +85,34 @@ namespace LibraryManagement.Forms
             int btnHeight = 45;
             int spacing = 5;
 
-            // Menu buttons
-            AddMenuButton("Trang chủ", y, () => { ClearContent(); SetupDashboard(); LoadDashboard(); });
+            AddMenuButton("Trang chủ", y, BtnHome_Click);
             y += btnHeight + spacing;
 
-            AddMenuButton("Quản lý Sách", y, () => OpenForm(new FormBookManagement()));
+            AddMenuButton("Quản lý Sách", y, BtnBooks_Click);
             y += btnHeight + spacing;
 
-            AddMenuButton("Quản lý Độc giả", y, () => OpenForm(new FormMemberManagement()));
+            AddMenuButton("Quản lý Độc giả", y, BtnMembers_Click);
             y += btnHeight + spacing;
 
-            AddMenuButton("Mượn sách", y, () => OpenForm(new FormBorrow()));
+            AddMenuButton("Mượn sách", y, BtnBorrow_Click);
             y += btnHeight + spacing;
 
-            AddMenuButton("Trả sách", y, () => OpenForm(new FormReturn()));
+            AddMenuButton("Trả sách", y, BtnReturn_Click);
             y += btnHeight + spacing;
 
-            AddMenuButton("Báo cáo & Thống kê", y, () => OpenForm(new FormReport()));
+            AddMenuButton("Báo cáo & Thống kê", y, BtnReport_Click);
             y += btnHeight + spacing;
 
-            // Admin only
             if (CurrentUser.User?.IsAdmin == true)
             {
-                y += 20; // separator
-                AddMenuButton("Quản lý Tài khoản", y, () => OpenForm(new FormUserManagement()));
+                y += 20;
+                AddMenuButton("Quản lý Tài khoản", y, BtnUsers_Click);
                 y += btnHeight + spacing;
 
-                AddMenuButton("Cấu hình hệ thống", y, () => OpenForm(new FormSettings()));
+                AddMenuButton("Cấu hình hệ thống", y, BtnSettings_Click);
                 y += btnHeight + spacing;
             }
 
-            // Logout button at bottom
             var btnLogout = new Button
             {
                 Text = "Đăng xuất",
@@ -195,7 +130,7 @@ namespace LibraryManagement.Forms
             panelMenu.Controls.Add(btnLogout);
         }
 
-        private void AddMenuButton(string text, int y, Action onClick)
+        private void AddMenuButton(string text, int y, EventHandler onClick)
         {
             var btn = new Button
             {
@@ -212,58 +147,90 @@ namespace LibraryManagement.Forms
             };
             btn.FlatAppearance.BorderSize = 0;
             btn.FlatAppearance.MouseOverBackColor = Color.FromArgb(41, 128, 185);
-            btn.Click += (s, e) => onClick();
+            btn.Click += onClick;
             panelMenu.Controls.Add(btn);
+        }
+
+        private void BtnHome_Click(object? sender, EventArgs e)
+        {
+            ClearContent();
+            SetupDashboard();
+            LoadDashboard();
+        }
+
+        private void BtnBooks_Click(object? sender, EventArgs e)
+        {
+            OpenForm(new FormBookManagement());
+        }
+
+        private void BtnMembers_Click(object? sender, EventArgs e)
+        {
+            OpenForm(new FormMemberManagement());
+        }
+
+        private void BtnBorrow_Click(object? sender, EventArgs e)
+        {
+            OpenForm(new FormBorrow());
+        }
+
+        private void BtnReturn_Click(object? sender, EventArgs e)
+        {
+            OpenForm(new FormReturn());
+        }
+
+        private void BtnReport_Click(object? sender, EventArgs e)
+        {
+            OpenForm(new FormReport());
+        }
+
+        private void BtnUsers_Click(object? sender, EventArgs e)
+        {
+            OpenForm(new FormUserManagement());
+        }
+
+        private void BtnSettings_Click(object? sender, EventArgs e)
+        {
+            OpenForm(new FormSettings());
         }
 
         private void SetupDashboard()
         {
             panelContent.Controls.Clear();
 
-            // Stats cards
             int cardWidth = 180;
             int cardHeight = 100;
             int spacing = 20;
             int x = 20;
             int y = 20;
 
-            // Card 1: Total Books
             var card1 = CreateStatCard("Tổng số sách", "0", Color.FromArgb(52, 152, 219), x, y, cardWidth, cardHeight);
-            lblTotalBooks = (Label)card1.Controls[1];
+            lblTotalBooks = (Label)card1.Controls["lblValue"]!;
             panelContent.Controls.Add(card1);
             x += cardWidth + spacing;
 
-            // Card 2: Total Members
             var card2 = CreateStatCard("Độc giả", "0", Color.FromArgb(46, 204, 113), x, y, cardWidth, cardHeight);
-            lblTotalMembers = (Label)card2.Controls[1];
+            lblTotalMembers = (Label)card2.Controls["lblValue"]!;
             panelContent.Controls.Add(card2);
             x += cardWidth + spacing;
 
-            // Card 3: Borrowing
             var card3 = CreateStatCard("Đang mượn", "0", Color.FromArgb(155, 89, 182), x, y, cardWidth, cardHeight);
-            lblBorrowing = (Label)card3.Controls[1];
+            lblBorrowing = (Label)card3.Controls["lblValue"]!;
             panelContent.Controls.Add(card3);
             x += cardWidth + spacing;
 
-            // Card 4: Overdue
             var card4 = CreateStatCard("Quá hạn", "0", Color.FromArgb(231, 76, 60), x, y, cardWidth, cardHeight);
-            lblOverdue = (Label)card4.Controls[1];
+            lblOverdue = (Label)card4.Controls["lblValue"]!;
             panelContent.Controls.Add(card4);
             x += cardWidth + spacing;
 
-            // Card 5: Today Borrow
             var card5 = CreateStatCard("Mượn hôm nay", "0", Color.FromArgb(241, 196, 15), x, y, cardWidth, cardHeight);
-            lblTodayBorrow = (Label)card5.Controls[1];
+            lblTodayBorrow = (Label)card5.Controls["lblValue"]!;
             panelContent.Controls.Add(card5);
             x += cardWidth + spacing;
 
-            // Card 6: Today Return
             var card6 = CreateStatCard("Trả hôm nay", "0", Color.FromArgb(26, 188, 156), x, y, cardWidth, cardHeight);
-            lblTodayReturn = (Label)card6.Controls[1];
+            lblTodayReturn = (Label)card6.Controls["lblValue"]!;
             panelContent.Controls.Add(card6);
-
-            // DataGridViews
-            y = 140;
 
             int margin = 20;
             int splitSpacing = 20;
@@ -312,7 +279,6 @@ namespace LibraryManagement.Forms
             dgvOverdueList.Columns.Add("DaysOverdue", "Quá hạn");
             panelContent.Controls.Add(dgvOverdueList);
 
-            // Refresh button
             var btnRefresh = new Button
             {
                 Text = "🔄 Làm mới",
@@ -325,9 +291,15 @@ namespace LibraryManagement.Forms
                 Cursor = Cursors.Hand
             };
             btnRefresh.FlatAppearance.BorderSize = 0;
-            btnRefresh.Click += (s, e) => LoadDashboard();
+            btnRefresh.Click += BtnRefreshDashboard_Click;
             panelContent.Controls.Add(btnRefresh);
+
             AdjustGridLayout();
+        }
+
+        private void BtnRefreshDashboard_Click(object? sender, EventArgs e)
+        {
+            LoadDashboard();
         }
 
         private Panel CreateStatCard(string title, string value, Color color, int x, int y, int width, int height)
@@ -342,15 +314,17 @@ namespace LibraryManagement.Forms
             var lblTitle = new Label
             {
                 Text = title,
+                Name = "lblTitle",
                 Font = new Font("Segoe UI", 9),
                 ForeColor = Color.White,
                 Location = new Point(10, 10),
                 Size = new Size(width - 20, 25)
             };
 
-            var lblValue = new Label
+            var lblValueCard = new Label
             {
                 Text = value,
+                Name = "lblValue",
                 Font = new Font("Segoe UI", 24, FontStyle.Bold),
                 ForeColor = Color.White,
                 Location = new Point(10, 40),
@@ -358,13 +332,14 @@ namespace LibraryManagement.Forms
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
-            panel.Controls.AddRange(new Control[] { lblTitle, lblValue });
+            panel.Controls.Add(lblTitle);
+            panel.Controls.Add(lblValueCard);
             return panel;
         }
 
         private DataGridView CreateDataGridView(int x, int y, int width, int height)
         {
-            return new DataGridView
+            var dgv = new DataGridView
             {
                 Location = new Point(x, y),
                 Size = new Size(width, height),
@@ -375,24 +350,30 @@ namespace LibraryManagement.Forms
                 AllowUserToDeleteRows = false,
                 ReadOnly = true,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells,
-                ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
-                {
-                    BackColor = Color.FromArgb(52, 73, 94),
-                    ForeColor = Color.White,
-                    Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                    Padding = new Padding(5)
-                },
-                DefaultCellStyle = new DataGridViewCellStyle
-                {
-                    Font = new Font("Segoe UI", 9),
-                    Padding = new Padding(5)
-                },
-                AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle
-                {
-                    BackColor = Color.FromArgb(245, 245, 245)
-                }
+                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
             };
+
+            dgv.ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle
+            {
+                BackColor = Color.FromArgb(52, 73, 94),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Padding = new Padding(5)
+            };
+
+            dgv.DefaultCellStyle = new DataGridViewCellStyle
+            {
+                Font = new Font("Segoe UI", 9),
+                Padding = new Padding(5)
+            };
+
+            dgv.AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle
+            {
+                BackColor = Color.FromArgb(245, 245, 245)
+            };
+
+            dgv.EnableHeadersVisualStyles = false;
+            return dgv;
         }
 
         private void LoadDashboard()
@@ -409,7 +390,6 @@ namespace LibraryManagement.Forms
                 lblTodayBorrow.Text = stats.TodayBorrows.ToString("N0");
                 lblTodayReturn.Text = stats.TodayReturns.ToString("N0");
 
-                // Load recent borrows
                 var recentBorrows = borrowDAO.Search(status: BorrowRecord.STATUS_BORROWING);
                 dgvRecentBorrows.Rows.Clear();
                 foreach (var borrow in recentBorrows.Take(10))
@@ -423,7 +403,6 @@ namespace LibraryManagement.Forms
                     );
                 }
 
-                // Load overdue list
                 var overdueList = borrowDAO.GetOverdueRecords();
                 dgvOverdueList.Rows.Clear();
                 foreach (var record in overdueList.Take(10))
@@ -466,7 +445,8 @@ namespace LibraryManagement.Forms
 
         private void AdjustGridLayout()
         {
-            if (panelContent == null || dgvRecentBorrows == null || dgvOverdueList == null) return;
+            if (panelContent == null || dgvRecentBorrows == null || dgvOverdueList == null)
+                return;
 
             int margin = 20;
             int splitSpacing = 20;
@@ -498,7 +478,7 @@ namespace LibraryManagement.Forms
                 logDAO.Log("Đăng xuất hệ thống");
                 isLoggingOut = true;
                 CurrentUser.Logout();
-                this.Close();
+                Close();
             }
         }
 
@@ -509,6 +489,7 @@ namespace LibraryManagement.Forms
                 timerDateTime?.Stop();
                 return;
             }
+
             if (e.CloseReason == CloseReason.UserClosing)
             {
                 var result = MessageBox.Show("Bạn có chắc muốn thoát ứng dụng?", "Xác nhận",
@@ -525,11 +506,6 @@ namespace LibraryManagement.Forms
                     logDAO.Log("Thoát ứng dụng");
                 }
             }
-        }
-
-        private void FormMain_Load_1(object sender, EventArgs e)
-        {
-
         }
     }
 }

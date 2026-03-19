@@ -12,13 +12,6 @@ namespace LibraryManagement.Forms
     /// </summary>
     public partial class FormReport : Form
     {
-        private Panel panelContent = null!;
-        private ComboBox cboReportType = null!;
-        private DateTimePicker dtpFrom = null!;
-        private DateTimePicker dtpTo = null!;
-        private DataGridView dgvReport = null!;
-        private Label lblSummary = null!;
-
         public FormReport()
         {
             InitializeComponent();
@@ -27,12 +20,14 @@ namespace LibraryManagement.Forms
 
         private void FormReport_Load(object? sender, EventArgs e)
         {
-            SetupForm();
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime)
                 return;
 
             try
             {
+                dtpFrom.Value = DateTime.Today.AddMonths(-1);
+                dtpTo.Value = DateTime.Today;
+                cboReportType.SelectedIndex = 0;
                 LoadDashboardStats();
             }
             catch (Exception ex)
@@ -41,153 +36,29 @@ namespace LibraryManagement.Forms
             }
         }
 
-
-        private void SetupForm()
+        private void CboReportType_SelectedIndexChanged(object? sender, EventArgs e)
         {
-            // Title
-            var lblTitle = new Label
-            {
-                Text = "THỐNG KÊ - BÁO CÁO",
-                Font = new Font("Segoe UI", 18, FontStyle.Bold),
-                ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(20, 10),
-                AutoSize = true
-            };
-            this.Controls.Add(lblTitle);
+            GenerateReport();
+        }
 
-            // Filter panel - row 1
-            var panelFilter = new Panel
-            {
-                Location = new Point(20, 55),
-                Size = new Size(1180, 100),
-                BackColor = Color.White
-            };
+        private void BtnGenerate_Click(object? sender, EventArgs e)
+        {
+            GenerateReport();
+        }
 
-            // Row 1: Report type and date filters
-            var lblType = new Label { Text = "Báo cáo:", Location = new Point(15, 17), AutoSize = true, Font = new Font("Segoe UI", 9) };
-            cboReportType = new ComboBox
-            {
-                Location = new Point(70, 14),
-                Size = new Size(220, 28),
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Font = new Font("Segoe UI", 9)
-            };
-            cboReportType.Items.AddRange(new object[] {
-                "Tổng quan",
-                "Sách mượn nhiều nhất",
-                "Độc giả mượn nhiều nhất",
-                "Sách quá hạn",
-                "Thống kê theo ngày",
-                "Danh sách phạt chưa thu",
-                "Danh sách sách hết"
-            });
-            cboReportType.SelectedIndex = 0;
-            cboReportType.SelectedIndexChanged += (s, e) => GenerateReport();
+        private void BtnExport_Click(object? sender, EventArgs e)
+        {
+            ExportToExcel();
+        }
 
-            var lblFrom = new Label { Text = "Từ:", Location = new Point(305, 17), AutoSize = true, Font = new Font("Segoe UI", 9) };
-            dtpFrom = new DateTimePicker
-            {
-                Location = new Point(330, 14),
-                Size = new Size(120, 28),
-                Format = DateTimePickerFormat.Short,
-                Value = DateTime.Today.AddMonths(-1)
-            };
+        private void BtnPrint_Click(object? sender, EventArgs e)
+        {
+            PrintReport();
+        }
 
-            var lblTo = new Label { Text = "Đến:", Location = new Point(460, 17), AutoSize = true, Font = new Font("Segoe UI", 9) };
-            dtpTo = new DateTimePicker
-            {
-                Location = new Point(495, 14),
-                Size = new Size(120, 28),
-                Format = DateTimePickerFormat.Short,
-                Value = DateTime.Today
-            };
-
-            var btnGenerate = new Button
-            {
-                Text = "Tạo báo cáo",
-                Location = new Point(630, 12),
-                Size = new Size(90, 32),
-                BackColor = Color.FromArgb(52, 152, 219),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9)
-            };
-            btnGenerate.FlatAppearance.BorderSize = 0;
-            btnGenerate.Click += (s, e) => GenerateReport();
-
-            var btnExport = new Button
-            {
-                Text = "Xuất Excel",
-                Location = new Point(730, 12),
-                Size = new Size(85, 32),
-                BackColor = Color.FromArgb(46, 204, 113),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9)
-            };
-            btnExport.FlatAppearance.BorderSize = 0;
-            btnExport.Click += (s, e) => ExportToExcel();
-
-            var btnPrint = new Button
-            {
-                Text = "In",
-                Location = new Point(825, 12),
-                Size = new Size(50, 32),
-                BackColor = Color.FromArgb(155, 89, 182),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9)
-            };
-            btnPrint.FlatAppearance.BorderSize = 0;
-            btnPrint.Click += (s, e) => PrintReport();
-
-            // Row 2: Quick action button for borrow/return records
-            var lblQuickActions = new Label
-            {
-                Text = "Xem chi tiết:",
-                Location = new Point(15, 62),
-                AutoSize = true,
-                Font = new Font("Segoe UI", 9)
-            };
-
-            var btnBorrowReturnDetails = new Button
-            {
-                Text = "Mượn/Trả",
-                Location = new Point(95, 57),
-                Size = new Size(80, 32),
-                BackColor = Color.FromArgb(41, 128, 185),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9),
-                Cursor = Cursors.Hand
-            };
-            btnBorrowReturnDetails.FlatAppearance.BorderSize = 0;
-            btnBorrowReturnDetails.Click += (s, e) => OpenBorrowReturnDetailsForm();
-
-            panelFilter.Controls.AddRange(new Control[] {
-                lblType, cboReportType, lblFrom, dtpFrom, lblTo, dtpTo, btnGenerate, btnExport, btnPrint,
-                lblQuickActions, btnBorrowReturnDetails
-            });
-            this.Controls.Add(panelFilter);
-
-            // Content panel
-            panelContent = new Panel
-            {
-                Location = new Point(20, 165),
-                Size = new Size(1180, 355),
-                BackColor = Color.White,
-                AutoScroll = true
-            };
-            this.Controls.Add(panelContent);
-
-            // Summary label
-            lblSummary = new Label
-            {
-                Location = new Point(20, 530),
-                Size = new Size(1180, 30),
-                Font = new Font("Segoe UI", 11)
-            };
-            this.Controls.Add(lblSummary);
+        private void BtnBorrowReturnDetails_Click(object? sender, EventArgs e)
+        {
+            OpenBorrowReturnDetailsForm();
         }
 
         private void LoadDashboardStats()
